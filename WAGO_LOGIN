@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# Initialize service status variables
+COCKPIT_ACTIVE="inactive"
+PORTAINER_ACTIVE="inactive"
+ISSUE_FILE_COCKPIT="/etc/issue.d/cockpit.issue"  # Ensure this path is correct
+
+# Check for screenfetch and run it if present
+if command -v screenfetch >/dev/null 2>&1; then
+    screenfetch
+fi
+
+# Check and fetch system version
+VERSION=$(cat /sys/class/dmi/id/product_version 2>/dev/null || echo "Version not found")
+
+
+# Display ASCII Art Banner and other information
+echo -e "\033[1;32m
+================================================
+\033[0m"
+
+echo -e "\033[1;32m
+  ██     ██  █████   ██████   ██████
+  ██     ██ ██   ██ ██       ██    ██
+  ██  █  ██ ███████ ██   ███ ██    ██
+  ██ ███ ██ ██   ██ ██    ██ ██    ██
+   ███ ███  ██   ██  ██████   ██████
+\033[0m"
+
+echo -e "\033[1;32m
+================================================
+\033[0m"
+
+# List all network interfaces except lo and those without an IP or with only local IPs
+echo -e "Available network interfaces and their IPs:"
+echo "==========================================="
+for iface in $(ip -o link show | awk -F ': ' '{print $2}' | cut -d' ' -f1); do
+    # Fetch IP address, exclude empty, localhost, and virtual interfaces like veth*, docker*, etc.
+    ip=$(ip -f inet addr show $iface 2>/dev/null | grep -oP 'inet \K[\d.]+')
+    if [[ -n "$ip" && "$iface" != "lo" && ! "$iface" =~ ^(docker|veth|br-).* ]]; then
+        echo -e "  $iface: \033[1;37m$ip\033[0m"  # IP addresses displayed in white
+    fi
+done
+echo "==========================================="
+echo " "
+
+# Check for Cockpit service status
+if [ -f "$ISSUE_FILE_COCKPIT" ]; then
+    echo "Cockpit is installed."
+    COCKPIT_ACTIVE="active"
+    # Read and display the URL from the issue file
+    echo "Reading web console URL from $ISSUE_FILE_COCKPIT:"
+    cat "$ISSUE_FILE_COCKPIT"
+else
+    echo "Cockpit is not installed."
+    COCKPIT_ACTIVE="not installed"
+fi
+echo -e "Cockpit Status: \033[1;32m$COCKPIT_ACTIVE\033[0m"
+[ "$COCKPIT_ACTIVE" = "active" ] && echo "Cockpit console: https://${HOSTNAME}:9090/"
+echo " "
+
+# Check for Portainer service status using Docker
+if command -v docker >/dev/null 2>&1; then
+    if docker info >/dev/null 2>&1; then
+        if docker ps | grep -q portainer; then
+            PORTAINER_ACTIVE="active"
+        else
+            PORTAINER_ACTIVE="inactive (Docker running but Portainer not found)"
+        fi
+    else
+        PORTAINER_ACTIVE="Docker permission denied or not running"
+    fi
+else
+    PORTAINER_ACTIVE="Docker not installed"
+fi
+echo -e "Portainer Status: \033[1;32m$PORTAINER_ACTIVE\033[0m"
+[ "$PORTAINER_ACTIVE" = "active" ] && echo "Portainer console: https://${HOSTNAME}:9443/"
+
+# Check for ignition scada and run it if present
+if command -v /usr/local/bin/ignition/ignition.sh status >/dev/null 2>&1; then
+    /usr/local/bin/ignition/ignition.sh status
+fi
+
+
+# Tailscale IP address
+TAILSCALE_IP=$(ip -f inet addr show tailscale0 2>/dev/null | grep -oP 'inet \K[\d.]+')
+
+# Gateway, DNS, and NTP information
+GATEWAY=$(ip route | grep default | awk '{print $3}')
+DNS=$(grep "nameserver" /etc/resolv.conf | awk '{print $2}' | xargs)
+NTP_STATUS=$(timedatectl status | grep "NTP service" | awk '{print $3}')
+
+HOSTNAME=$(hostname -f)
+
+# Display other information
+echo -e "
+===============================================
+Product-Info: \033[1;37m$VERSION\033[0m
+Tailscale IP: \033[1;37m${TAILSCALE_IP:-Not available}\033[0m
+Default Gateway: \033[1;37m$GATEWAY\033[0m
+DNS Server: \033[1;37m$DNS\033[0m
+NTP Service: \033[1;37m$NTP_STATUS\033[0m
+===============================================
+"
+
+
+
+
