@@ -1,0 +1,7 @@
+
+walter;walter;users;storm;sudo;Walter Klippenberg Bø;Admin;97078282;63884134;Ansatt;123412;
+connie;connie;users;storm;sudo;Connie Klippenberg Bø;Admin;97038282;63834134;Ansatt;123413;
+espen;espen;users;storm;sudo;Espen Klippenberg Bø;Admin;97078292;66885478;Kunde;Gult;
+EOF
+#End off file
+#User;Group0;Group1;Group3;Group4;FullName;RoomNumber;WorkPhone;HomePhone;Other;Password;
