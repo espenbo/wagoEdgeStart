@@ -271,14 +271,15 @@ install_wago_login() {
       echo "File /etc/WAGO_LOGIN does not exist"
   fi
   echo "Downloading WAGO_LOGIN file from GitHub..."
-  curl -o /etc/WAGO_LOGIN https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/WAGO_LOGIN
+  sudo curl -o /etc/WAGO_LOGIN https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/WagoLogin/WAGO_LOGIN
+
   echo "Changing owner and permissions of WAGO_LOGIN file..."
-  chown root:root /etc/WAGO_LOGIN
-  chmod 755 /etc/WAGO_LOGIN
+  sudo chown root:root /etc/WAGO_LOGIN
+  sudo chmod 755 /etc/WAGO_LOGIN
   echo "Checking if WAGO_LOGIN is already added to /etc/profile..."
   if ! grep -q "/etc/WAGO_LOGIN" /etc/profile; then
     echo "Adding WAGO_LOGIN to /etc/profile..."
-    sed -i '/export TMOUT/a /etc/WAGO_LOGIN' /etc/profile
+    sudo sed -i '/export PATH/a /etc/WAGO_LOGIN' /etc/profile
   else
     echo "WAGO_LOGIN is already added to /etc/profile."
   fi
