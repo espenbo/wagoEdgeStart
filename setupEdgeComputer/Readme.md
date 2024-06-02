@@ -36,11 +36,11 @@ This script is used to set up the edge computer by installing and configuring ne
 
     Run the script with root privileges:
 
-    sh
+   ```sh
 
     sudo ./setup_edge_computer.sh
 
-    Follow the on-screen menu to select and execute the desired tasks.
+Follow the on-screen menu to select and execute the desired tasks.
 
 ### reset_setupedge.sh
 
@@ -48,49 +48,36 @@ This script is used to reset and remove all changes made by the setup_edge_compu
 
 #### Features
 
-    List system updates
-    Uninstall Tailscale
-    Reset UFW firewall settings
-    Uninstall Cockpit web manager
-    Uninstall Docker and Docker Compose
-    Uninstall Samba and domain functionality
-    Uninstall other necessary programs
-    Remove WAGO login script
-    Leave and reset Samba domain
-    Uninstall OPC UA Commander
-    Uninstall Node.js
-    Uninstall Node-RED
-    Uninstall unattended-upgrades
-    Run all reset tasks sequentially
+- List system updates
+- Uninstall Tailscale
+- Reset UFW firewall settings
+- Uninstall Cockpit web manager
+- Uninstall Docker and Docker Compose
+- Uninstall Samba and domain functionality
+- Uninstall other necessary programs
+- Remove WAGO login script
+- Leave and reset Samba domain
+- Uninstall OPC UA Commander
+- Uninstall Node.js
+- Uninstall Node-RED
+- Uninstall unattended-upgrades
+- Run all reset tasks sequentially
 
 #### Usage
 
-    Make the script executable:
+Make the script executable:
 
-    sh
-
-chmod +x reset_setupedge.sh
+   ```sh
+    chmod +x reset_setupedge.sh
 
 Run the script with root privileges:
 
-sh
-
+   ```sh
     sudo ./reset_setupedge.sh
 
-    Follow the on-screen menu to select and execute the desired reset tasks.
+Follow the on-screen menu to select and execute the desired reset tasks.
 
 
 Contributions are welcome! Please fork the repository and submit a pull request.
 
 Use these scripts at your own risk. Ensure you have backups of any important data before running these scripts.
-
-
-
-### Instructions for Uploading the Scripts
-
-1. Create a new GitHub repository.
-2. Upload the `setup_edge_computer.sh` and `reset_setupedge.sh` scripts to the repository.
-3. Add the `README.md` file with the above content to the repository.
-4. Commit and push the changes to GitHub.
-
-If you need further assistance with any steps, feel free to ask!
