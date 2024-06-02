@@ -1,7 +1,5 @@
 README.md
 
-markdown
-
 # Edge Computer Setup and Reset Scripts
 
 ## Overview
