@@ -35,13 +35,13 @@ This script is used to set up the edge computer by installing and configuring ne
    chmod +x setup_edge_computer.sh
 
 
-Run the script with root privileges:
+2. Run the script with root privileges:
 
    ```sh
     sudo ./setup_edge_computer.sh
 
 
-Follow the on-screen menu to select and execute the desired tasks.
+3. Follow the on-screen menu to select and execute the desired tasks.
 
 ### reset_setupedge.sh
 
@@ -66,19 +66,19 @@ This script is used to reset and remove all changes made by the setup_edge_compu
 
 #### Usage
 
-Make the script executable:
+1. Make the script executable:
 
    ```sh
     chmod +x reset_setupedge.sh
 
 
-Run the script with root privileges:
+2. Run the script with root privileges:
 
    ```sh
     sudo ./reset_setupedge.sh
 
 
-Follow the on-screen menu to select and execute the desired reset tasks.
+3. Follow the on-screen menu to select and execute the desired reset tasks.
 
 
 Contributions are welcome! Please fork the repository and submit a pull request.
