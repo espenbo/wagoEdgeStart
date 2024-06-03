@@ -5,20 +5,24 @@ COCKPIT_ACTIVE="inactive"
 PORTAINER_ACTIVE="inactive"
 ISSUE_FILE_COCKPIT="/etc/issue.d/cockpit.issue"  # Ensure this path is correct
 
+normal=`echo "\033[m"`
+menu=`echo "\033[36m"` #blue
+number=`echo "\033[33m"` #yellow
+bgred=`echo "\033[41m"`
+fgred=`echo "\033[31m"`
+
 # Check for root privileges
 if [ "$EUID" -ne 0 ]; then
-    echo "Please run as root"
-    echo "or with sudo"
-    exit 1
+    printf "You will be asked for sudo passeord"
+    read opt
+else
+    printf "${fgred}Please dont' run as root"
+    printf "${fgred}or with sudo"
+    read opt
 fi
 
 # Function to display all tasks in a table format
 show_menu(){
-    normal=`echo "\033[m"`
-    menu=`echo "\033[36m"` #blue
-    number=`echo "\033[33m"` #yellow
-    bgred=`echo "\033[41m"`
-    fgred=`echo "\033[31m"`
     printf "\n${menu}********* System Provisioning Tool ***********${normal}\n"
     printf "${menu} ${number} 1)${menu} Run 'apt update' and 'apt upgrade -y' ${normal}\n"
     printf "${menu} ${number} 2)${menu} Install WAGO login script ${normal}\n"
@@ -51,8 +55,8 @@ option_picked(){
 # Update package list and upgrade system
 update_system() {
   echo "Updating the system..."
-  apt update
-  apt upgrade -y
+  sudo apt update
+  sudo apt upgrade -y
 }
 
 # Install Tailscale
@@ -66,52 +70,54 @@ install_tailscale() {
 install_ufw() {
   if ! command -v ufw &> /dev/null; then
       echo "UFW is not installed. Installing UFW..."
-      apt-get install -y ufw
+      sudo apt-get install -y ufw
   fi
   echo "Resetting UFW to default settings..."
-  ufw reset
+  sudo ufw reset
   echo "Setting default policies to deny incoming and allow outgoing..."
-  ufw default deny incoming
-  ufw default allow outgoing
+  sudo ufw default deny incoming
+  sudo ufw default allow outgoing
   echo "Allowing SSH on port 22..."
-  ufw allow 22/tcp
+  sudo ufw allow 22/tcp
   echo "Allowing HTTP on port 80..."
-  ufw allow 80/tcp
+  sudo ufw allow 80/tcp
   echo "Allowing HTTPS on port 443..."
-  ufw allow 443/tcp
+  sudo ufw allow 443/tcp
   echo "Allowing Modbus on port 502..."
-  ufw allow 502/tcp
+  sudo ufw allow 502/tcp
+  echo "Allowing Cockpit on port 9090..."
+  sudo ufw allow 9090/tcp  
   echo "Allowing OPC/UA Discovery Server on ports 4840 and 4843..."
-  ufw allow 4840/tcp
-  ufw allow 4843/tcp
+  sudo ufw allow 4840/tcp
+  sudo ufw allow 4843/tcp
   echo "Allowing OPC/UA Reference Server on ports 62540 and 62541..."
-  ufw allow 62540/tcp
-  ufw allow 62541/tcp
+  sudo ufw allow 62540/tcp
+  sudo ufw allow 62541/tcp
   echo "Allowing OPC/UA Data Access Server on ports 62546 and 62547..."
-  ufw allow 62546/tcp
-  ufw allow 62547/tcp
+  sudo ufw allow 62546/tcp
+  sudo ufw allow 62547/tcp
   echo "Allowing OPC/UA Generic Client on ports 61210 and 61211..."
-  ufw allow 61210/tcp
-  ufw allow 61211/tcp
+  sudo ufw allow 61210/tcp
+  sudo ufw allow 61211/tcp
   echo "Enabling UFW..."
-  ufw enable
+  sudo ufw enable
   echo "UFW firewall configuration completed. Current status:"
-  ufw status verbose
+  sudo ufw status verbose
   echo "Firewall setup complete."
 }
 
 # Install Cockpit
 install_cockpit() {
     echo "Installing Cockpit..."
-    apt-get install -y cockpit cockpit-bridge cockpit-networkmanager cockpit-packagekit cockpit-pcp cockpit-storaged cockpit-system cockpit-ws
+    sudo apt-get install -y cockpit cockpit-bridge cockpit-networkmanager cockpit-packagekit cockpit-pcp cockpit-storaged cockpit-system cockpit-ws
     echo "Configure Cockpit to start on boot..."
-    systemctl enable --now cockpit.socket
+    sudo systemctl enable --now cockpit.socket
     echo "Starting Cockpit..."
-    systemctl start cockpit
+    sudo systemctl start cockpit
 
     echo "Opening Cockpit port in the firewall..."
     if command -v ufw &> /dev/null; then
-        ufw allow 9090/tcp
+        sudo ufw allow 9090/tcp
     else
         echo "UFW is not installed."
     fi
@@ -133,14 +139,15 @@ install_cockpit() {
             echo "You chose NetworkManager."
             # Backup /etc/network/interfaces
             if [ -f /etc/network/interfaces ]; then
-                cp /etc/network/interfaces /etc/network/interfaces.bak
+                sudo cp /etc/network/interfaces /etc/network/interfaces.bak
                 echo "Backup of /etc/network/interfaces created as /etc/network/interfaces.bak."
             fi
             # Comment out interfaces in /etc/network/interfaces
-            sed -i '/^auto/s/^/#/' /etc/network/interfaces
-            sed -i '/^iface/s/^/#/' /etc/network/interfaces
+            sudo sed -i '/^auto/s/^/#/' /etc/network/interfaces
+            sudo sed -i '/^iface/s/^/#/' /etc/network/interfaces
             echo "Interfaces in /etc/network/interfaces have been commented out."
-            systemctl restart NetworkManager
+            echo "Everything inn /etc/network/interfaces must be commented out."
+            sudo systemctl restart NetworkManager
             echo "NetworkManager is now managing the network interfaces."
             ;;
         2)
@@ -172,16 +179,22 @@ install_cockpit() {
 install_docker() {
   echo "Installing Docker and Docker Compose..."
   apt-get remove -y docker docker-engine docker.io containerd runc
-  apt-get update
-  apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-  curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  apt-get update
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  sudo apt-get update
+  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+  sudo curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt-get update
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
   echo "Configure Docker to start on boot..."
-  systemctl enable docker
+  sudo systemctl enable docker
   echo "Starting Docker..."
-  systemctl start docker
+  sudo systemctl start docker
+  if ! groups $USER | grep -q '\bdocker\b'; then
+    echo "Adding user to the docker group..."
+    sudo usermod -aG docker $USER
+    echo "You need to log out and log back in for the changes to take effect."
+    return
+  fi
 }
 
 # Install LazyDocker
@@ -196,6 +209,13 @@ install_lazydocker() {
     case $choice in
         1)
             echo "You chose to install LazyDocker with Docker."
+                        # Add user to docker group
+            if ! groups $USER | grep -q '\bdocker\b'; then
+                echo "Adding user to the docker group..."
+                sudo usermod -aG docker $USER
+                echo "You need to log out and log back in for the changes to take effect."
+                return
+            fi
             echo "Installing LazyDocker..."
             docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.config/lazydocker:/.config/jesseduffield/lazydocker lazyteam/lazydocker
             echo "alias lzd='docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.config/lazydocker:/.config/jesseduffield/lazydocker lazyteam/lazydocker'" >> ~/.bashrc
@@ -224,32 +244,32 @@ install_lazydocker() {
 
 # Install other necessary programs
 install_other_programs() {
-  echo "Installing other programs..."
-  echo "sudo: Allows users to run programs with the security privileges of another user, typically the superuser (root)."
-  echo "appstream: A software component that provides metadata for software applications and services in the Linux ecosystem. It is used to create a unified software center experience across different Linux distributions."
-  echo "bmon: A bandwidth monitor and rate estimator for network interfaces. It provides a simple interface for monitoring and visualizing the bandwidth usage of network interfaces."
-  echo "curl: A command-line tool and library for transferring data with URLs. It supports various protocols, including HTTP, HTTPS, FTP, and many others. It is commonly used for downloading files and interacting with REST APIs."
-  echo "dnsutils: A collection of utilities for querying DNS (Domain Name System) servers. It includes tools like dig, nslookup, and host, which are useful for troubleshooting DNS issues."
-  echo "exfat-fuse: A FUSE (Filesystem in Userspace) module to enable read and write support for the exFAT filesystem. exFAT is a file system optimized for flash drives and is used on many SD cards and USB drives."
-  echo "exfat-utils: Utilities for managing exFAT filesystems, including tools to create, check, label, and repair exFAT filesystems."
-  echo "gnupg: A complete and free implementation of the OpenPGP standard, allowing you to encrypt and sign your data and communications. It includes tools like gpg for encryption, signing, and key management."
-  echo "gpg-agent: A daemon to manage private keys independently from any protocol. It is used by GnuPG and other applications that need to handle private keys."
-  echo "gpgconf: A utility to configure and manage GnuPG options."
-  echo "lm-sensors: A package that provides tools and drivers for monitoring the temperatures, voltage, and fans of your system. It is useful for keeping an eye on the hardware health of your machine."
-  echo "mc (Midnight Commander): A text-mode file manager for Unix-like systems. It provides a user-friendly interface for managing files and directories, including support for copy, move, delete, and edit operations."
-  echo "net-tools: A collection of programs for controlling the network subsystem of the Linux kernel. It includes tools like ifconfig, netstat, route, and others. Note that net-tools is considered deprecated in favor of iproute2."
-  echo "nfs-common: Contains the support files and scripts needed to use NFS (Network File System) on client systems. NFS allows you to share directories over a network."
-  echo "ntfs-3g: A FUSE driver that provides read and write access to NTFS (New Technology File System) partitions, commonly used on Windows systems."
-  echo "rsync: A fast and versatile file copying tool used for local and remote file synchronization. It efficiently transfers and synchronizes files between computers and directories by only copying the differences between source and destination."
-  echo "rsyslog: A rocket-fast system for log processing. It offers high-performance, great security features, and modularity. Rsyslog is commonly used for collecting and forwarding log messages in Unix and Unix-like systems."
-  echo "vim: A highly configurable text editor built to enable efficient text editing. It is an improved version of the vi editor, with additional features like syntax highlighting, code folding, and extended plugins."
-  echo "=================================================================================================================================================================================================================="
-  echo "Install all this programs? Enter choice (1 install x quit)"
+  printf "${menu}Installing other programs...${normal}\n"
+  printf "${menu} ${number}sudo:${menu} Allows users to run programs with the security privileges of another user, typically the superuser (root).${normal}\n"
+  printf "${menu} ${number}appstream:${menu} A software component that provides metadata for software applications and services in the Linux ecosystem. It is used to create a unified software center experience across different Linux distributions.${normal}\n"
+  printf "${menu} ${number}bmon:${menu} A bandwidth monitor and rate estimator for network interfaces. It provides a simple interface for monitoring and visualizing the bandwidth usage of network interfaces.${normal}\n"
+  printf "${menu} ${number}curl:${menu} A command-line tool and library for transferring data with URLs. It supports various protocols, including HTTP, HTTPS, FTP, and many others. It is commonly used for downloading files and interacting with REST APIs.${normal}\n"
+  printf "${menu} ${number}dnsutils:${menu} A collection of utilities for querying DNS (Domain Name System) servers. It includes tools like dig, nslookup, and host, which are useful for troubleshooting DNS issues.${normal}\n"
+  printf "${menu} ${number}exfat-fuse:${menu} A FUSE (Filesystem in Userspace) module to enable read and write support for the exFAT filesystem. exFAT is a file system optimized for flash drives and is used on many SD cards and USB drives.${normal}\n"
+  printf "${menu} ${number}gnupg:${menu} A complete and free implementation of the OpenPGP standard, allowing you to encrypt and sign your data and communications. It includes tools like gpg for encryption, signing, and key management.${normal}\n"
+  printf "${menu} ${number}gpg-agent:${menu} A daemon to manage private keys independently from any protocol. It is used by GnuPG and other applications that need to handle private keys.${normal}\n"
+  printf "${menu} ${number}gpgconf:${menu} A utility to configure and manage GnuPG options.${normal}\n"
+  printf "${menu} ${number}lm-sensors:${menu} A package that provides tools and drivers for monitoring the temperatures, voltage, and fans of your system. It is useful for keeping an eye on the hardware health of your machine.${normal}\n"
+  printf "${menu} ${number}mc:${menu} (Midnight Commander): A text-mode file manager for Unix-like systems. It provides a user-friendly interface for managing files and directories, including support for copy, move, delete, and edit operations.${normal}\n"
+  printf "${menu} ${number}net-tools:${menu} A collection of programs for controlling the network subsystem of the Linux kernel. It includes tools like ifconfig, netstat, route, and others. Note that net-tools is considered deprecated in favor of iproute2.${normal}\n"
+  printf "${menu} ${number}nfs-common:${menu} Contains the support files and scripts needed to use NFS (Network File System) on client systems. NFS allows you to share directories over a network.${normal}\n"
+  printf "${menu} ${number}ntfs-3g:${menu} A FUSE driver that provides read and write access to NTFS (New Technology File System) partitions, commonly used on Windows systems.${normal}\n"
+  printf "${menu} ${number}rsync:${menu} A fast and versatile file copying tool used for local and remote file synchronization. It efficiently transfers and synchronizes files between computers and directories by only copying the differences between source and destination.${normal}\n"
+  printf "${menu} ${number}rsyslog:${menu} A rocket-fast system for log processing. It offers high-performance, great security features, and modularity. Rsyslog is commonly used for collecting and forwarding log messages in Unix and Unix-like systems.${normal}\n"
+  printf "${menu} ${number}vim:${menu} A highly configurable text editor built to enable efficient text editing. It is an improved version of the vi editor, with additional features like syntax highlighting, code folding, and extended plugins.${normal}\n"
+  printf "${menu}==================================================================================================================================================================================================================${normal}\n"
+  printf "${menu}Install all this programs? Enter choice  ${number}(1 install x quit)"
+  read choice
     case $choice in
         1)
             echo "Installing with"
-            echo "apt-get install -y sudo appstream bmon curl dnsutils exfat-fuse exfat-utils gnupg gpg-agent gpgconf lm-sensors mc net-tools nfs-common ntfs-3g rsync rsyslog vim"
-            apt-get install -y sudo appstream bmon curl dnsutils exfat-fuse exfat-utils gnupg gpg-agent gpgconf lm-sensors mc net-tools nfs-common ntfs-3g rsync rsyslog vim
+            echo "sudo apt install -y sudo appstream bmon curl dnsutils exfat-fuse gnupg gpg-agent gpgconf lm-sensors mc net-tools nfs-common ntfs-3g rsync rsyslog vim"
+            sudo apt install -y sudo appstream bmon curl dnsutils exfat-fuse gnupg gpg-agent gpgconf lm-sensors mc net-tools nfs-common ntfs-3g rsync rsyslog vim
             ;;
         *)
             echo "No installation performed."
