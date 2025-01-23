@@ -68,6 +68,24 @@ install_java() {
 
 # Install Tailscale
 install_tailscale() {
+  # Check if curl is installed
+  if ! command -v curl &> /dev/null; then
+    echo "curl is not installed. Do you want to install it? (yes/no)"
+    read -r response
+    if [[ "$response" == "yes" ]]; then
+      if [[ "$EUID" -ne 0 ]]; then
+        echo "You need to run this script as root to install curl."
+        exit 1
+      fi
+      echo "Installing curl using apt..."
+      apt update && apt install -y curl
+    else
+      echo "curl is required to proceed. Exiting..."
+      exit 1
+    fi
+  fi
+
+  # Proceed with Tailscale installation
   echo "Installing Tailscale..."
   curl -fsSL https://tailscale.com/install.sh | sh
   tailscale up
