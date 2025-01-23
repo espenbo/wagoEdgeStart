@@ -79,11 +79,23 @@ install_tailscale() {
       echo "curl is required to proceed. Exiting..."
     fi
   fi
+  printf "Tailscale in LXC containers"
+  printf "Unprivileged LXC containers do not have access to the networking resource needed for Tailscale to work"
+  printf "https://tailscale.com/kb/1130/lxc-unprivileged"
+  printf "To bring up Tailscale in an unprivileged container, access to the /dev/tun device can be enabled in the config for the LXC. For example, using Proxmox 7.0 to host as unprivileged LXC with ID 112, the following lines would be added to /etc/pve/lxc/112.conf"
+  printf "${fgred}lxc.cgroup2.devices.allow: c 10:200 rwm"
+  printf "${fgred}lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file"
 
   # Proceed with Tailscale installation
-  echo "Installing Tailscale..."
-  curl -fsSL https://tailscale.com/install.sh | sh
-  tailscale up
+  echo "Continue the install? (yes/no)"
+  read -r response
+  if [[ "$response" == "yes" || "$response" == "y" ]]; then
+    echo "Installing Tailscale..."
+    curl -fsSL https://tailscale.com/install.sh | sh
+    tailscale up
+  else
+    echo "Exiting..."
+  fi
 }
 
 # Install UFW and set it up
