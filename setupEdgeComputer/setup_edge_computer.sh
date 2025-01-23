@@ -28,18 +28,19 @@ show_menu(){
     printf "${menu} ${number} 2)${menu} Install WAGO login script ${normal}\n"
     printf "${menu} ${number} 3)${menu} Install UFW firewall manager and open specific ports ${normal}\n"
     printf "${menu} ${number} 4)${menu} Install Tailscale ${normal}\n"
-    printf "${menu} ${number} 5)${menu} Install Cockpit web manager ${normal}\n"
-    printf "${menu} ${number} 6)${menu} Install Docker and Docker Compose ${normal}\n"
-    printf "${menu} ${number} 7)${menu} Install LazyDocker. CLI docker manager. https://github.com/jesseduffield/lazydocker ${normal}\n"
-    printf "${menu} ${number} 8)${menu} Install OPC UA Commander ${normal}\n"
-    printf "${menu} ${number} 9)${menu} Install Node-RED ${normal}\n"
-    printf "${menu} ${number} 10)${menu} Install Samba and domain functionality ${normal}\n"
-    printf "${menu} ${number} 11)${menu} Install Node.js ${normal}\n"
-    printf "${menu} ${number} 12)${menu} Install other necessary programs ${normal}\n"
-    printf "${menu} ${number} 13)${menu} Setup Samba and join domain ${normal}\n"
-    printf "${menu} ${number} 14)${menu} Run all tasks sequentially ${normal}\n"
-    printf "${menu} ${number} 15)${menu} Install unattended-upgrades ${normal}\n"
-    printf "${menu} ${number} 16)${menu} show menu ${normal}\n"
+    printf "${menu} ${number} 5)${menu} Install Java ${normal}\n"
+    printf "${menu} ${number} 6)${menu} Install Cockpit web manager ${normal}\n"
+    printf "${menu} ${number} 7)${menu} Install Docker and Docker Compose ${normal}\n"
+    printf "${menu} ${number} 8)${menu} Install LazyDocker. CLI docker manager. https://github.com/jesseduffield/lazydocker ${normal}\n"
+    printf "${menu} ${number} 9)${menu} Install OPC UA Commander ${normal}\n"
+    printf "${menu} ${number} 10)${menu} Install Node-RED ${normal}\n"
+    printf "${menu} ${number} 11)${menu} Install Samba and domain functionality ${normal}\n"
+    printf "${menu} ${number} 12)${menu} Install Node.js ${normal}\n"
+    printf "${menu} ${number} 13)${menu} Install other necessary programs ${normal}\n"
+    printf "${menu} ${number} 14)${menu} Setup Samba and join domain ${normal}\n"
+    printf "${menu} ${number} 15)${menu} Run all tasks sequentially ${normal}\n"
+    printf "${menu} ${number} 16)${menu} Install unattended-upgrades ${normal}\n"
+    printf "${menu} ${number} 17)${menu} show menu ${normal}\n"
     printf "${menu} ${number} x)${menu} Exit ${normal}\n"
     printf "Please enter a menu option and enter or ${fgred}x to exit. ${normal}"
     read opt
@@ -57,6 +58,12 @@ update_system() {
   echo "Updating the system..."
   sudo apt update
   sudo apt upgrade -y
+}
+
+# Install java default-jre default-jdk
+install_java() {
+  echo "Installing default java..."
+  sudo apt install -y default-jre default-jdk
 }
 
 # Install Tailscale
@@ -522,6 +529,7 @@ update_system
 install_wago_login
 install_other_programs
 install_docker
+install_java
 install_tailscale
 install_ufw
 Install_nodered
@@ -564,60 +572,65 @@ do
                 show_menu;
             ;;
             5) clear;
-                option_picked "Option 5 Picked - Install Cockpit web manager";
-                install_cockpit;
+                option_picked "Option 5 Picked - Install Java";
+                install_java;
                 show_menu;
             ;;
             6) clear;
-                option_picked "Option 6 Picked - Install Docker and Docker Compose";
-                install_docker;
+                option_picked "Option 6 Picked - Install Cockpit web manager";
+                install_cockpit;
                 show_menu;
             ;;
             7) clear;
-                option_picked "Option 7 Picked - Install LazyDocker";
-                install_lazydocker;
+                option_picked "Option 7 Picked - Install Docker and Docker Compose";
+                install_docker;
                 show_menu;
             ;;
             8) clear;
-                option_picked "Option 8 Picked - Install OPC UA Commander";
-                install_opcua_commander;
+                option_picked "Option 8 Picked - Install LazyDocker";
+                install_lazydocker;
                 show_menu;
             ;;
             9) clear;
-                option_picked "Option 9 Picked - Install Node-RED";
-                Install_nodered;
+                option_picked "Option 9 Picked - Install OPC UA Commander";
+                install_opcua_commander;
                 show_menu;
             ;;
             10) clear;
-                option_picked "Option 10 Picked - Install Samba and domain functionality";
-                install_samba_domain;
+                option_picked "Option 10 Picked - Install Node-RED";
+                Install_nodered;
                 show_menu;
             ;;
             11) clear;
-                option_picked "Option 11 Picked - Install Node.js";
-                install_nodejs;
+                option_picked "Option 11 Picked - Install Samba and domain functionality";
+                install_samba_domain;
                 show_menu;
             ;;
             12) clear;
-                option_picked "Option 12 Picked - Install other necessary programs";
-                install_other_programs;
+                option_picked "Option 12 Picked - Install Node.js";
+                install_nodejs;
                 show_menu;
             ;;
             13) clear;
-                option_picked "Option 13 Picked - Setup Samba and join domain";
-                setup_samba_domain;
+                option_picked "Option 13 Picked - Install other necessary programs";
+                install_other_programs;
                 show_menu;
             ;;
             14) clear;
-                option_picked "Option 14 Picked - Run all tasks sequentially";
-                run_all_tasks;
+                option_picked "Option 14 Picked - Setup Samba and join domain";
+                setup_samba_domain;
                 show_menu;
             ;;
             15) clear;
-                install_unattended_upgrades
+                option_picked "Option 15 Picked - Run all tasks sequentially";
+                run_all_tasks;
                 show_menu;
             ;;
             16) clear;
+                install_unattended_upgrades
+                show_menu;
+            ;;
+            17) clear;
                 show_menu;
             ;;
             x) clear;
