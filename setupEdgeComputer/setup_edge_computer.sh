@@ -73,15 +73,10 @@ install_tailscale() {
     echo "curl is not installed. Do you want to install it? (yes/no)"
     read -r response
     if [[ "$response" == "yes" || "$response" == "y" ]]; then
-      if [[ "$EUID" -ne 0 ]]; then
-        echo "You need to run this script as root to install curl."
-        exit 1
-      fi
       echo "Installing curl using apt..."
       sudo apt install -y curl
     else
       echo "curl is required to proceed. Exiting..."
-      exit 1
     fi
   fi
 
