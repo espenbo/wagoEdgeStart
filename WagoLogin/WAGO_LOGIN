@@ -13,37 +13,106 @@ fi
 # Check and fetch system version
 VERSION=$(cat /sys/class/dmi/id/product_version 2>/dev/null || echo "Version not found")
 
+# Display ASCII Art Banner and other information
+echo -e "\033[38;2;0;102;204m"
+echo "====================================================="
+echo "                                               "
+echo " ███████ ████████  ██████  ██████  ███    ███  "
+echo " ██         ██    ██    ██ ██   ██ ████  ████  "
+echo " ███████    ██    ██    ██ ██████  ██ ████ ██  "
+echo "      ██    ██    ██    ██ ██   ██ ██  ██  ██  "
+echo " ███████    ██     ██████  ██   ██ ██      ██  "
+echo "                                               "
+echo "       Storm Elektro AS avd. Automasjon        "
+echo "====================================================="
+echo -e "\033[0m"
 
 # Display ASCII Art Banner and other information
-echo -e "\033[1;32m
-================================================
-\033[0m"
-
-echo -e "\033[1;32m
-  ██     ██  █████   ██████   ██████
-  ██     ██ ██   ██ ██       ██    ██
-  ██  █  ██ ███████ ██   ███ ██    ██
-  ██ ███ ██ ██   ██ ██    ██ ██    ██
-   ███ ███  ██   ██  ██████   ██████
-\033[0m"
-
-echo -e "\033[1;32m
-================================================
-\033[0m"
+#echo -e "\033[1;32m
+#================================================
+#\033[0m"
+#
+#echo -e "\033[1;32m
+#  ██     ██  █████   ██████   ██████
+#  ██     ██ ██   ██ ██       ██    ██
+#  ██  █  ██ ███████ ██   ███ ██    ██
+#  ██ ███ ██ ██   ██ ██    ██ ██    ██
+#   ███ ███  ██   ██  ██████   ██████
+#\033[0m"
+#
+#echo -e "\033[1;32m
+#================================================
+#\033[0m"
 
 # List all network interfaces except lo and those without an IP or with only local IPs
 echo -e "Available network interfaces and their IPs:"
 echo "==========================================="
-for iface in $(ip -o link show | awk -F ': ' '{print $2}' | cut -d' ' -f1); do
-    # Fetch IP address, exclude empty, localhost, and virtual interfaces like veth*, docker*, etc.
-    ip=$(ip -f inet addr show $iface 2>/dev/null | grep -oP 'inet \K[\d.]+')
-    if [[ -n "$ip" && "$iface" != "lo" && ! "$iface" =~ ^(docker|veth|br-).* ]]; then
-        echo -e "  $iface: \033[1;37m$ip\033[0m"  # IP addresses displayed in white
+# Loop gjennom alle grensesnitt
+#for iface in $(ip -o link show | awk -F ': ' '{print $2}' | cut -d' ' -f1); do
+#    # Fetch IP address, exclude empty, localhost, and virtual interfaces like veth*, docker*, etc.
+#    ip=$(ip -f inet addr show $iface 2>/dev/null | grep -oP 'inet \K[\d.]+')
+#    if [[ -n "$ip" && "$iface" != "lo" && ! "$iface" =~ ^(docker|veth|br-).* ]]; then
+#        echo -e "  $iface: \033[1;37m$ip\033[0m"  # IP addresses displayed in white
+#    fi
+#done
+#echo "==========================================="
+#echo " "
+
+#for iface in $(ip -o link show | awk -F ': ' '{print $2}'); do
+#    # Hent IPv4-adresse
+#    ipv4=$(ip -f inet addr show "$iface" 2>/dev/null | grep -oP 'inet \K[\d.]+')
+#    # Hent IPv6-adresse
+#    ipv6=$(ip -f inet6 addr show "$iface" 2>/dev/null | grep -oP 'inet6 \K[\da-f:]+')
+
+#    # Hvis ingen IP-er finnes, hopp over
+#    if [[ -n "$ipv4" || -n "$ipv6" ]]; then
+#        echo -e "  $iface:"
+#        [[ -n "$ipv4" ]] && echo -e "    IPv4: \033[1;37m$ipv4\033[0m"
+#        [[ -n "$ipv6" ]] && echo -e "    IPv6: \033[1;37m$ipv6\033[0m"
+#    fi
+#done
+#echo "==========================================="
+
+echo -e "Available network interfaces and their IPs:"
+echo "==========================================="
+
+# Loop gjennom alle grensesnitt
+#for iface in $(ls /sys/class/net); do
+#    # Sjekk om grensesnittet er oppe
+#    if ip link show "$iface" | grep -q "state UP"; then
+#        echo -e "  $iface:"
+
+for iface in /sys/class/net/*; do
+    iface=$(basename "$iface")  # Hent kun navnet på grensesnittet
+    # Sjekk om grensesnittet er oppe
+    if ip link show "$iface" | grep -q "state UP"; then
+        echo -e "  $iface:"
+
+        # Hent IPv4-adresse
+        ipv4=$(ip -f inet addr show "$iface" 2>/dev/null | grep -oP 'inet \K[\d.]+')
+        # Hent IPv6-adresse(r)
+        ipv6=$(ip -f inet6 addr show "$iface" 2>/dev/null | grep -oP 'inet6 \K[\da-f:]+')
+
+        # Vis IPv4-adresser
+        if [[ -n "$ipv4" ]]; then
+            echo -e "    IPv4: \033[1;37m$ipv4\033[0m"
+        else
+            echo -e "    IPv4: None"
+        fi
+
+        # Vis IPv6-adresser
+        if [[ -n "$ipv6" ]]; then
+            echo -e "    IPv6:"
+            for ip in $ipv6; do
+                echo -e "      \033[1;37m$ip\033[0m"
+            done
+        else
+            echo -e "    IPv6: None"
+        fi
     fi
 done
-echo "==========================================="
-echo " "
 
+echo "==========================================="
 # Check for Cockpit service status
 if [ -f "$ISSUE_FILE_COCKPIT" ]; then
     echo "Cockpit is installed."
