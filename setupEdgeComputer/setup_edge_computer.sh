@@ -67,6 +67,7 @@ install_java() {
 }
 
 # Install Tailscale
+install_tailscale() {
   # Check if curl or wget is installed
   if command -v curl &>/dev/null; then
     DOWNLOADER="curl -fsSL"
@@ -94,12 +95,17 @@ install_java() {
     esac
   fi
   
-  printf "Tailscale in LXC containers\n"
-  printf "Unprivileged LXC containers do not have access to the networking resource needed for Tailscale to work\n"
-  printf "https://tailscale.com/kb/1130/lxc-unprivileged"
-  printf "To bring up Tailscale in an unprivileged container, access to the /dev/tun device can be enabled in the config for the LXC. For example, using Proxmox 7.0 to host as unprivileged LXC with ID 112, the following lines would be added to /etc/pve/lxc/112.conf\n"
-  printf "${fgred}lxc.cgroup2.devices.allow: c 10:200 rwm\n""
-  printf "${fgred}lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file\n""
+  printf "\n${menu}--- Informational Note: Tailscale in LXC Containers ---${normal}\n"
+  printf "The following instructions are informational and not part of the installation process.\n"
+  printf "https://tailscale.com/kb/1130/lxc-unprivileged\n"
+  printf "See: https://tailscale.com/kb/1130/lxc-unprivileged\n"
+  printf "To bring up Tailscale in an unprivileged container, access to the /dev/tun device can be enabled in the config for the LXC. \n"
+  printf "For example, using Proxmox 7.0 to host as unprivileged LXC with ID 112, the following lines would be added to /etc/pve/lxc/112.conf\n"
+  printf "Example LXC configuration lines:\n"
+  printf "${normal}----------\n"
+  printf "${fgred}lxc.cgroup2.devices.allow: c 10:200 rwm\n"
+  printf "${fgred}lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file\n"
+  printf "${normal}----------\n"
 
   # Proceed with Tailscale installation
   echo "Continue the install? (yes/no)"
@@ -107,10 +113,11 @@ install_java() {
   if [[ "$response" == "yes" || "$response" == "y" ]]; then
     echo "Installing Tailscale..."
     $DOWNLOADER https://tailscale.com/install.sh | sh
-    tailscale up
-  else
-    echo "Exiting..."
-  fi
+    if command -v tailscale &>/dev/null; then
+      sudo tailscale up
+    else
+      echo "Tailscale installation failed or not found in PATH."
+    fi
 }
 
 # Install UFW and set it up
