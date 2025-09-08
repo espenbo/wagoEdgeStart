@@ -118,8 +118,10 @@ install_tailscale() {
     else
       echo "Tailscale installation failed or not found in PATH."
     fi
+  fi
 }
-
+ 
+ 
 # Install UFW and set it up
 install_ufw() {
   if ! command -v ufw &> /dev/null; then
