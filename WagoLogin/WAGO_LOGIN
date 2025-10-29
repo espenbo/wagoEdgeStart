@@ -45,8 +45,8 @@ echo -e "\033[0m"
 #\033[0m"
 
 # List all network interfaces except lo and those without an IP or with only local IPs
-echo -e "Available network interfaces and their IPs:"
-echo "==========================================="
+#echo -e "Available network interfaces and their IPs:"
+#echo "==========================================="
 # Loop gjennom alle grensesnitt
 #for iface in $(ip -o link show | awk -F ': ' '{print $2}' | cut -d' ' -f1); do
 #    # Fetch IP address, exclude empty, localhost, and virtual interfaces like veth*, docker*, etc.
