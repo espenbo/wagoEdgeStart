@@ -337,17 +337,45 @@ install_other_programs() {
 # Install WAGO login script
 install_wago_login() {
   echo "Backup old WAGO_LOGIN"
-  # Check if the file exists
   if [ -f /etc/WAGO_LOGIN ]; then
-      # If the file exists, copy it to a new file with a .old extension
-      cp /etc/WAGO_LOGIN /etc/WAGO_LOGIN.old
+      sudo cp /etc/WAGO_LOGIN /etc/WAGO_LOGIN.old
       echo "File /etc/WAGO_LOGIN found and copied to /etc/WAGO_LOGIN.old"
   else
-      # If the file does not exist, print a message
       echo "File /etc/WAGO_LOGIN does not exist"
   fi
+
+  if command -v curl &>/dev/null; then
+    DOWNLOADER_wago_login="curl"
+  elif command -v wget &>/dev/null; then
+    DOWNLOADER_wago_login="wget"
+  else
+    echo "Neither curl nor wget is installed."
+    echo "Would you like to install curl or wget? (type 'curl', 'wget', or 'x' to exit):"
+    read -r downloader_choice
+    case "$downloader_choice" in
+      curl)
+        echo "Installing curl..."
+        sudo apt install -y curl
+        DOWNLOADER_wago_login="curl"
+        ;;
+      wget)
+        echo "Installing wget..."
+        sudo apt install -y wget
+        DOWNLOADER_wago_login="wget"
+        ;;
+      *)
+        echo "No downloader selected. Exiting..."
+        return
+        ;;
+    esac
+  fi
+
   echo "Downloading WAGO_LOGIN file from GitHub..."
-  sudo curl -o /etc/WAGO_LOGIN https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/WagoLogin/WAGO_LOGIN
+  if [ "$DOWNLOADER_wago_login" = "curl" ]; then
+    sudo curl -o /etc/WAGO_LOGIN https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/WagoLogin/WAGO_LOGIN
+  else
+    sudo wget -O /etc/WAGO_LOGIN https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/WagoLogin/WAGO_LOGIN
+  fi
 
   echo "Changing owner and permissions of WAGO_LOGIN file..."
   sudo chown root:root /etc/WAGO_LOGIN

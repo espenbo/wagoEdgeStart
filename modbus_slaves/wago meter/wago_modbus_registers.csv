@@ -1,0 +1,257 @@
+Register Address DEC,Register Address HEX,Content,Function code,Length ,Unit  ,Data type
+16384,4000,serial number,3,2, ,HEX
+0,,,,,,
+16386,4002,Meter code,3,1,,HEX
+16387,4003,Modbus ID,3,1,,Signed
+16388,4004,Baud rate,3,1,,Signed
+0,,1: 300 +AC0- 2: 600 +AC0- 3: 1200 +AC0- 4: 2400 5: 4800 +AC0- 6: 9600 +AC0- 7: 19200 +AC0- 8: 38400 9: 57600 +AC0- 10: 115200,,,,
+16389,4005,Protocol version,3,2,,Float ABCD
+0,,,,,,
+16391,4007,Software Version,3,2,,Float ABCD
+0,,,,,,
+16393,4009,Hardware version,3,2,,Float ABCD
+0,,,,,,
+16395,400B,Meter amp,3,1,A,Signed
+0,,,,,,
+16396,400C,CT ratio,3,1,A,HEX
+0,,,,,,
+16397,400D,S0 pulse rate,3,2,pulse/kWh,Float ABCD
+0,,,,,,
+16399,400F,Combinations code,3,1,,Signed
+0,,1: import only +AC0- 2: export only 3: import +- export +AC0- 4: import +AC0- export 5: import +AC0- export (10) LCD rolling time,,,,
+16400,4010,LCD rolling time,3,1,sec,HEX
+16401,4011,Parity,3,1,,Signed
+0,,1: even +AC0- 2: none +AC0- 3: odd,,,,
+16402,4012,L1 current direction,3,1,,ASCII
+0,,F: import +AC0- R: export,,,,
+16403,4013,L2 current direction,3,1,,ASCII
+0,,F: import +AC0- R: export,,,,
+16404,4014,L3 current direction,3,1,,ASCII
+0,,F: import +AC0- R: export,,,,
+16406,4016,Power+AC0-down counter,3,1,,Signed
+16407,4017,Current quadrant,3,1,,Signed
+16408,4018,L1 quadrant,3,1,,Signed
+16409,4019,L2 quadrant,3,1,,Signed
+16410,401A,L3 quadrant,3,1,,Signed
+16411,401B,Checksum,3,2,,HEX
+0,,,,,,
+16413,401D,Active status word,3,2,,HEX
+0,,,,,,
+16415,401F,CT ratio,3,2,A,Signed
+0,,9995 005 +AD0- 9995/5,,,,
+16417,4021,S0 pulse width,3,2,ms,Signed
+0,,Value between 2+AC0-99 ms,,,,
+16418,4022,S0 pulse type,3,1,,HEX
+0,,+ACI-1: Active energy and reactive energy, 2: import +ACY- export+ACI-,,,,
+16419,4023,Checksum 2 (not relevant),3,2,,HEX
+0,,,,,,
+16421,4025,Reserved for later adjustments,,1,,
+16422,4026,Data type,3,1,,Signed
+0,,+IBg-1: Standard +IBM- 2: Integer,,,,
+16423,4027,Reserved for later adjustments,,,,
+0,,,,,,
+16434,4032,Screen direction,3,1,,Signed
+0,,0: Standard +IBM- 1: rotated 180+ALA-,,,,
+16435,4033,OBIS code ON/OFF,,1,,Signed
+0,,0: OFF +IBM- 1: ON,,,,
+20480,5000,Voltage+ACo-,3,2,V,Float ABCD
+0,,,,,,
+20482,5002,L1 voltage,3,2,V,Float ABCD
+0,,,,,,
+20484,5004,L2 voltage,3,2,V,Float ABCD
+0,,,,,,
+20486,5006,L3 voltage,3,2,V,Float ABCD
+0,,,,,,
+20488,5008,Frequency,3,2,Hz,Float ABCD
+0,,,,,,
+20490,500A,Current+ACo-,3,2,A,Float ABCD
+0,,,,,,
+20492,500C,L1 current,3,2,A,Float ABCD
+0,,,,,,
+20494,500E,L2 current,3,2,A,Float ABCD
+0,,,,,,
+20496,5010,L3 current,3,2,A,Float ABCD
+0,,,,,,
+20498,5012,Total active power,3,2,KW,Float ABCD
+0,,,,,,
+20500,5014,L1 active power,3,2,KW,Float ABCD
+0,,,,,,
+20502,5016,L2 active power,3,2,KW,Float ABCD
+0,,,,,,
+20504,5018,L3 active power,3,2,KW,Float ABCD
+0,,,,,,
+20506,501A,Total reactive power,3,2,kvar,Float ABCD
+0,,,,,,
+20508,501C,L1 reactive power,3,2,kvar,Float ABCD
+0,,,,,,
+20510,501E,L2 reactive power,3,2,kvar,Float ABCD
+0,,,,,,
+20512,5020,L3 reactive power,3,2,kvar,Float ABCD
+0,,,,,,
+20514,5022,Total apparent power,3,2,KVA,Float ABCD
+0,,,,,,
+20516,5024,L1 apparent power,3,2,KVA,Float ABCD
+0,,,,,,
+20518,5026,L2 apparent power,3,2,KVA,Float ABCD
+0,,,,,,
+20520,5028,L3 apparent power,3,2,KVA,Float ABCD
+0,,,,,,
+20522,502A,Power factor,3,2,,Float ABCD
+0,,,,,,
+20524,502C,L1 power factor,3,2,,Float ABCD
+0,,,,,,
+20526,502E,L2 power factor,3,2,,Float ABCD
+0,,,,,,
+20528,5030,L3 power factor,3,2,,Float ABCD
+0,,,,,,
+20530,5032,L1+AC0-L2 voltage,3,2,V,Float ABCD
+0,,,,,,
+20532,5034,L1+AC0-L3 voltage,3,2,V,Float ABCD
+0,,,,,,
+20534,5036,L2+AC0-L3 voltage,3,2,V,Float ABCD
+0,,,,,,
+24576,6000,Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24578,6002,T1 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24580,6004,T2 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24582,6006,L1 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24584,6008,L2 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24586,600A,L3 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24588,600C,Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24590,600E,T1 Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24592,6010,T2 Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24594,6012,L1 Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24596,6014,L2 Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24598,6016,L3 Active energy import,3,2,kWh,Float ABCD
+0,,,,,,
+24600,6018,Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24602,601A,T1 Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24604,601C,T2 Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24606,601E,L1 Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24608,6020,L2 Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24610,6022,L3 Active energy export,3,2,kWh,Float ABCD
+0,,,,,,
+24612,6024,Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24614,6026,T1 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24616,6028,T2 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24618,602A,L1 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24620,602C,L2 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24622,602E,L3 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24624,6030,Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24626,6032,T1 Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24628,6034,T2 Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24630,6036,L1 Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24632,6038,L2 Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24634,603A,L3 Reactive energy import,3,2,kvarh,Float ABCD
+0,,,,,,
+24636,603C,Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24638,603E,T1 Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24640,6040,T2 Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24642,6042,L1 Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24644,6044,L2 Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24646,6046,L3 Reactive energy export,3,2,kvarh,Float ABCD
+0,,,,,,
+24648,6048,Tariff,3,2,,Signed
+0,,,,,,
+24649,6049,Resettable day register,3,2,kWh,Float ABCD
+0,,,,,,
+24651,604B,T3 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24653,604D,T4 Total active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24655,604F,T3 Import active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24657,6051,T4 Import active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24659,6053,T3 Export active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24661,6055,T4 Export active energy,3,2,kWh,Float ABCD
+0,,,,,,
+24663,6057,T3 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24665,6059,T4 Total reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24667,605B,T3 Import reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24669,605D,T4 Import reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24671,605F,T3 Export reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24673,6061,T4 Export reactive energy,3,2,kvarh,Float ABCD
+0,,,,,,
+24675,6063,Import inductive reactive energy in Q1 (total),3,2,kvarh,Float ABCD
+0,,,,,,
+24677,6065,Import inductive reactive energy in Q1 (T1),3,2,kvarh,Float ABCD
+0,,,,,,
+24679,6067,Import inductive reactive energy in Q1 (T2),3,2,kvarh,Float ABCD
+0,,,,,,
+24681,6069,Import inductive reactive energy in Q1 (T3),3,2,kvarh,Float ABCD
+0,,,,,,
+24683,606B,Import inductive reactive energy in Q1 (T4),3,2,kvarh,Float ABCD
+0,,,,,,
+24685,606D,Import capacitive reactive energy in Q2 (total),3,2,kvarh,Float ABCD
+0,,,,,,
+24687,606F,Import capacitive reactive energy in Q2 (T1),3,2,kvarh,Float ABCD
+0,,,,,,
+24689,6071,Import capacitive reactive energy in Q2 (T2),3,2,kvarh,Float ABCD
+0,,,,,,
+24691,6073,Import capacitive reactive energy in Q2 (T3),3,2,kvarh,Float ABCD
+0,,,,,,
+24693,6075,Import capacitive reactive energy in Q2 (T4),3,2,kvarh,Float ABCD
+0,,,,,,
+24695,6077,Export inductive reactive energy in Q3 (total),3,2,kvarh,Float ABCD
+0,,,,,,
+24697,6079,Export inductive reactive energy in Q3 (T1),3,2,kvarh,Float ABCD
+0,,,,,,
+24699,607B,Export inductive reactive energy in Q3 (T2),3,2,kvarh,Float ABCD
+0,,,,,,
+24701,607D,Export inductive reactive energy in Q3 (T3),3,2,kvarh,Float ABCD
+0,,,,,,
+24703,607F,Export inductive reactive energy in Q3 (T4),3,2,kvarh,Float ABCD
+0,,,,,,
+24705,6081,Export capacitive reactive energy in Q4 (total),3,2,kvarh,Float ABCD
+0,,,,,,
+24707,6083,Export capacitive reactive energy in Q4 (T1),3,2,kvarh,Float ABCD
+0,,,,,,
+24709,6085,Export capacitive reactive energy in Q4 (T2),3,2,kvarh,Float ABCD
+0,,,,,,
+24711,6087,Export capacitive reactive energy in Q4 (T3),3,2,kvarh,Float ABCD
+0,,,,,,
+24713,6089,Export capacitive reactive energy in Q4 (T4),3,2,kvarh,Float ABCD
+0,,,,,,
+24715,608B,Resettable day register L1,3,2,kWh,Float ABCD
+0,,,,,,
+24717,608D,Resettable day register L2,3,2,kWh,Float ABCD
+0,,,,,,
+24719,608F,Resettable day register L3,3,2,kWh,Float ABCD
