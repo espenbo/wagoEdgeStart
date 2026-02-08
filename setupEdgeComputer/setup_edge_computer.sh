@@ -33,14 +33,15 @@ show_menu(){
     printf "${menu} ${number} 7)${menu} Install Docker and Docker Compose ${normal}\n"
     printf "${menu} ${number} 8)${menu} Install LazyDocker. CLI docker manager. https://github.com/jesseduffield/lazydocker ${normal}\n"
     printf "${menu} ${number} 9)${menu} Install OPC UA Commander ${normal}\n"
-    printf "${menu} ${number} 10)${menu} Install Node-RED ${normal}\n"
-    printf "${menu} ${number} 11)${menu} Install Samba and domain functionality ${normal}\n"
-    printf "${menu} ${number} 12)${menu} Install Node.js ${normal}\n"
-    printf "${menu} ${number} 13)${menu} Install other necessary programs ${normal}\n"
-    printf "${menu} ${number} 14)${menu} Setup Samba and join domain ${normal}\n"
-    printf "${menu} ${number} 15)${menu} Run all tasks sequentially ${normal}\n"
-    printf "${menu} ${number} 16)${menu} Install unattended-upgrades ${normal}\n"
-    printf "${menu} ${number} 17)${menu} show menu ${normal}\n"
+    printf "${menu} ${number} 10)${menu} Install SquareWaveSystems opcilloscope OPC client${normal}\n"    
+    printf "${menu} ${number} 11)${menu} Install Node-RED ${normal}\n"
+    printf "${menu} ${number} 12)${menu} Install Samba and domain functionality ${normal}\n"
+    printf "${menu} ${number} 13)${menu} Install Node.js ${normal}\n"
+    printf "${menu} ${number} 14)${menu} Install other necessary programs ${normal}\n"
+    printf "${menu} ${number} 15)${menu} Setup Samba and join domain ${normal}\n"
+    printf "${menu} ${number} 16)${menu} Run all tasks sequentially ${normal}\n"
+    printf "${menu} ${number} 17)${menu} Install unattended-upgrades ${normal}\n"
+    printf "${menu} ${number} 18)${menu} show menu ${normal}\n"
     printf "${menu} ${number} x)${menu} Exit ${normal}\n"
     printf "Please enter a menu option and enter or ${fgred}x to exit. ${normal}"
     read opt
@@ -472,6 +473,28 @@ install_opcua_commander() {
     esac
 }
 
+
+# Install OPC UA Commander
+install_opcilloscope() {
+    echo "Installing a lightweight, cross-platform OPC UA client for the terminal heads."
+    echo "The program is installed for the local user on ./local/bin and is called opcilloscope."
+    echo ""
+    echo "Provided by https://github.com/SquareWaveSystems/opcilloscope"
+    curl -fsSL https://raw.githubusercontent.com/SquareWaveSystems/opcilloscope/main/install.sh | bash
+
+    echo "Add opcilloscope to your bash shell profile:"
+
+    if ! grep -q 'export PATH="$PATH:$HOME/.local/bin"' ~/.bashrc; then
+        echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+        echo "Added ~/.local/bin to PATH in ~/.bashrc"
+    else
+        echo "~/.local/bin is already in PATH in ~/.bashrc"
+    fi
+
+    # apply changes immediately
+    export PATH="$PATH:$HOME/.local/bin"
+}
+
 # Install Node.js
 install_nodejs() {
     echo "Checking for Docker..."
@@ -615,6 +638,7 @@ install_lazydocker
 install_samba_domain
 setup_samba_domain
 install_opcua_commander
+install_opcilloscope
 install_nodejs
 install_unattended_upgrades
 }
@@ -674,40 +698,45 @@ do
                 show_menu;
             ;;
             10) clear;
-                option_picked "Option 10 Picked - Install Node-RED";
-                Install_nodered;
+                option_picked "Option 10 Picked - Install SquareWaveSystems opcilloscope OPC client";
+                install_opcilloscope;
                 show_menu;
             ;;
             11) clear;
-                option_picked "Option 11 Picked - Install Samba and domain functionality";
-                install_samba_domain;
+                option_picked "Option 11 Picked - Install Node-RED";
+                Install_nodered;
                 show_menu;
             ;;
             12) clear;
-                option_picked "Option 12 Picked - Install Node.js";
-                install_nodejs;
+                option_picked "Option 12 Picked - Install Samba and domain functionality";
+                install_samba_domain;
                 show_menu;
             ;;
             13) clear;
-                option_picked "Option 13 Picked - Install other necessary programs";
-                install_other_programs;
+                option_picked "Option 13 Picked - Install Node.js";
+                install_nodejs;
                 show_menu;
             ;;
             14) clear;
-                option_picked "Option 14 Picked - Setup Samba and join domain";
-                setup_samba_domain;
+                option_picked "Option 14 Picked - Install other necessary programs";
+                install_other_programs;
                 show_menu;
             ;;
             15) clear;
-                option_picked "Option 15 Picked - Run all tasks sequentially";
-                run_all_tasks;
+                option_picked "Option 15 Picked - Setup Samba and join domain";
+                setup_samba_domain;
                 show_menu;
             ;;
             16) clear;
-                install_unattended_upgrades
+                option_picked "Option 16 Picked - Run all tasks sequentially";
+                run_all_tasks;
                 show_menu;
             ;;
             17) clear;
+                install_unattended_upgrades
+                show_menu;
+            ;;
+            18) clear;
                 show_menu;
             ;;
             x) clear;
