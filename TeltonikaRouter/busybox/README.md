@@ -1,57 +1,32 @@
 # Teltonika SMS on BusyBox (WAGO PFC)
 
-Two shell scripts to send SMS via a Teltonika RUTX router from a WAGO PFC (BusyBox Linux).
+Shell scripts to send SMS via a Teltonika RUTX router from a WAGO PFC (BusyBox Linux). Each version lives in its own folder with its own README:
 
-- `sendsms_busybox.sh` — minimal, works out of the box on BusyBox `/bin/sh`.
-- `sendsms_busyboxV2.sh` — hardened: config/env support, CLI args, retries, syslog, TLS options.
+| Folder | Script | Description |
+|---|---|---|
+| [`sendsms_busybox/`](sendsms_busybox/README.md) | `sendsms_busybox.sh` | Minimal, works out of the box on BusyBox `/bin/sh`. Settings are edited directly in the script. |
+| [`sendsms_busyboxV2/`](sendsms_busyboxV2/README.md) | `sendsms_busyboxV2.sh` | Hardened: config/env support, CLI args, retries with backoff, syslog, TLS options. |
+| [`sendsms_busyboxV3/`](sendsms_busyboxV3/README.md) | `sendsms_busyboxV3.sh` | Recommended. Rewritten from V2: stricter error handling, distinct exit codes per failure stage, safer temp-file/credential handling, and no REST/CGI fallback (REST API only). |
 
 ## Requirements
 
 - BusyBox `/bin/sh` (ash)
-- Tools: `curl`, `awk`, `grep`, `xxd`, `tr`, `mktemp`, `date`, `printf`
+- Tools: `curl`, `awk`, `grep`, `mktemp`, `date`, `printf`, `chmod`, `rm`, `sleep`
+  - `sendsms_busybox.sh` and `sendsms_busyboxV2.sh` additionally require `xxd` and `tr` (used to URL-encode the CGI fallback request)
 - Optional: `logger` for syslog integration (BusyBox usually has it)
 
 > **Note:** These scripts do **not** use `jq` or `sed`, and avoid bash-isms.
 
 ## Install
 
-Copy the scripts to your PLC (e.g., `/root/`) and make them executable:
+Copy the script folder to your PLC (e.g., `/root/`) and make the script executable:
 
 ```sh
-chmod 700 /root/sendsms_busybox.sh
-chmod 700 /root/sendsms_busyboxV2.sh
+chmod 700 /root/sendsms_busyboxV3/sendsms_busyboxV3.sh
+```
 
-## basic sendsms_busybox.sh
-Edit the header variables inside sendsms_busybox.sh (ROUTER_IP, USERNAME, PASSWORD, NUMBER, MESSAGE), then:
-```sh
-./sendsms_busybox.sh
+## Which version should I use?
 
-## Hardened V2 (recommended) sendsms_busyboxV2.sh
-Provide number and message as arguments:
-```sh
-./sendsms_busyboxV2.sh "+4791916159" "Hello from WAGO"
+Use **V3** for anything new — see [`sendsms_busyboxV3/README.md`](sendsms_busyboxV3/README.md) for full usage, configuration, and exit codes.
 
-You can override settings via env vars or a config file.
-
-### Configuration (V2)
-
-Create /etc/teltonika-sms.conf (root-only):
-```sh
-ROUTER_IP=100.65.37.82
-USERNAME=admin
-PASSWORD='change-me'
-# TLS:
-# INSECURE=0
-# CACERT=/etc/ssl/certs/teltonika-ca.pem
-# Retries/timeouts:
-# RETRIES=3
-# BACKOFF_BASE=2
-# CONNECT_TIMEOUT=5
-# MAX_TIME=20
-# Logging:
-# SYSLOG_TAG=sendsms
-# QUIET=0
-
-Permissions:
-```sh
-chmod 600 /etc/teltonika-sms.conf
+V1 and V2 are kept for reference and existing deployments; see their own READMEs for details.
