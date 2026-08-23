@@ -1,0 +1,15 @@
+# CODESYS build artefacts and per-user settings.
+# These are regenerated on every build and can leak site data such as
+# router host names and phone numbers from earlier compilations.
+*.opt
+*.~u
+*.precompilecache
+*.bootinfo
+*.bootinfo_guids
+*.compileinfo
+*.core
+*.backup
+CLAUDE.md
+
+# CODESYS creates these while a project is open
+~$*
