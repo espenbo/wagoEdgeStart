@@ -189,15 +189,15 @@ def update_registers():
 
         # Oppdater alle slaver
         for unit in range(1, NUM_SLAVES + 1):
-            context[unit].setValues(3, 0, hr_data)
-            context[unit].setValues(4, 0, hr_data)
+            device_contexts[unit].setValues(3, 0, hr_data)
+            device_contexts[unit].setValues(4, 0, hr_data)
         tick += 1
         time.sleep(2)
 
 device_contexts = {
     unit: ModbusDeviceContext(
-        hr=ModbusSequentialDataBlock(0, hr_data.copy()),
-        ir=ModbusSequentialDataBlock(0, hr_data.copy())
+        hr=ModbusSequentialDataBlock(1, hr_data.copy()),
+        ir=ModbusSequentialDataBlock(1, hr_data.copy())
     )
     for unit in range(1, NUM_SLAVES + 1) # Creates IDs
 }

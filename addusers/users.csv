@@ -1,7 +1,4 @@
-
-walter;walter;users;storm;sudo;Walter Johan;Admin;97078899;63884134;Ansatt;123412;
-connie;connie;users;storm;sudo;Connie Pettersen;Admin;97038282;63834134;Ansatt;123413;
-espen;espen;users;storm;sudo;Espen Jørgensen;Admin;97978292;66885478;Kunde;Gult;
+username;group0;group1;group2;group3;fullname;room;workphone;homephone;other;password
+ola;ola;users;;sudo;Ola Example;Admin;00000000;00000000;Employee;change-me
+kari;kari;users;;;Kari Example;Office;00000000;00000000;Employee;change-me
 EOF
-#End off file
-#User;Group0;Group1;Group3;Group4;FullName;RoomNumber;WorkPhone;HomePhone;Other;Password;

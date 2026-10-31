@@ -72,11 +72,6 @@ for user_info in "${users_info[@]}"; do
     [ -n "$group2" ] && usermod -aG "$group2" "$username"
     [ -n "$group3" ] && usermod -aG "$group3" "$username"
 
-    # Ensure sudo rights if specified
-    if [[ "$group3" == "sudo" ]]; then
-        usermod -aG sudo "$username"
-    fi
-
     # Set the user password
     echo "$username:$password" | chpasswd
 
@@ -88,11 +83,10 @@ update_sshd_config() {
     SSHD_CONFIG="/etc/ssh/sshd_config"
     ALLOW_USERS_LINE=$(grep "^AllowUsers" $SSHD_CONFIG)
 
-    # Create AllowUsers line if it doesn't exist
+    # Without an AllowUsers line everyone can log in. Adding one would lock out all other users.
     if [ -z "$ALLOW_USERS_LINE" ]; then
-        echo "AllowUsers line not found in $SSHD_CONFIG, adding it."
-        echo "AllowUsers" >> $SSHD_CONFIG
-        ALLOW_USERS_LINE="AllowUsers"
+        echo "No AllowUsers line in $SSHD_CONFIG, nothing to update."
+        return
     fi
 
     # Loop through users to be added
@@ -100,7 +94,7 @@ update_sshd_config() {
         IFS=';' read -r username group0 group1 group2 group3 fullname room workphone homephone other password <<< "$user_info"
         
         # Check if user is already in AllowUsers line
-        if ! grep -q "$username" <<< "$ALLOW_USERS_LINE"; then
+        if ! grep -qw "$username" <<< "$ALLOW_USERS_LINE"; then
             echo "Adding $username to AllowUsers."
             sed -i "/^AllowUsers/ s/$/ $username/" $SSHD_CONFIG
         else
@@ -108,8 +102,8 @@ update_sshd_config() {
         fi
     done
 
-    # Restart SSH service to apply changes
-    systemctl restart sshd
+    # Restart SSH service to apply changes, but only with a valid config
+    sshd -t && systemctl restart ssh
 }
 
 # Update sshd_config to allow new users

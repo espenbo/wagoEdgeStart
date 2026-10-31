@@ -19,13 +19,13 @@ This Python script simulates a **Solar-Log™ Modbus TCP PM (Power Management)**
 
 ## 🔧 Requirements
 
-- Python 3.8+
-- [`pymodbus`](https://github.com/pymodbus-dev/pymodbus) >= 3.0
+- Python 3.10+
+- [`pymodbus`](https://github.com/pymodbus-dev/pymodbus) 3.10 to 3.12. Version 3.13 and newer do not work with this script
 
 Install dependencies:
 
 ```bash
-pip install pymodbus
+pip install 'pymodbus>=3.10,<3.13'
 ```
 
 Or use the provided environment script:
@@ -49,7 +49,7 @@ PORT = 5020
 2. **Start the simulator:**
 
 ```bash
-python solarlogg_slave.py
+solarlogg_env/bin/python solarlogg_slave.py
 ```
 
 ---

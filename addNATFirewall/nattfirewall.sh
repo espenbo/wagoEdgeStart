@@ -13,11 +13,11 @@ apt-get install -y ufw iptables-persistent
 echo "Konfigurerer NAT..."
 
 # Aktiver IP videresending
-echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-sysctl -p
+echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nat.conf
+sysctl --system
 
 # Konfigurer iptables for NAT
-iptables -t nat -A POSTROUTING -o $INTERNET_IFACE -j MASQUERADE
+iptables -t nat -A POSTROUTING -s $LAN_SUBNET -o $INTERNET_IFACE -j MASQUERADE
 iptables -A FORWARD -i $INTERNET_IFACE -o $LAN_IFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i $LAN_IFACE -o $INTERNET_IFACE -j ACCEPT
 
@@ -34,9 +34,8 @@ ufw allow ssh
 ufw allow in on $LAN_IFACE to any
 ufw allow out on $LAN_IFACE to any
 
-# Tillat videresending
+# Tillat videresending fra LAN til internett. Svar slipper inn av seg selv, ny trafikk fra internett stoppes.
 ufw route allow in on $LAN_IFACE out on $INTERNET_IFACE
-ufw route allow in on $INTERNET_IFACE out on $LAN_IFACE
 
 # Aktiver UFW
 ufw enable

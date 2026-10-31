@@ -1,1 +1,26 @@
+# Customer data and test files
 tmp/
+*.knxproj
+*.knxkeys
+
+# Passwords and keys
+.env
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*_env/
+.venv/
+
+# Editors and local tools
+.vscode/
+.idea/
+.claude/
+.~lock.*#
+*~
+.DS_Store
+
+# Program output
+*.log

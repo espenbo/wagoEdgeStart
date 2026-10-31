@@ -1,255 +1,357 @@
 #!/bin/bash
 
-# Check for root privileges
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run as root"
-    exit 1
-fi
+# Remove what setup_edge_computer.sh installed. Run it as a normal user, it uses sudo where it is needed.
+# sudo, curl, gnupg and rsyslog are never removed: without sudo a normal user cannot manage the machine.
 
-# Function to display all reset tasks in a table format
+normal=`echo "\033[m"`
+menu=`echo "\033[36m"` #blue
+number=`echo "\033[33m"` #yellow
+fgred=`echo "\033[31m"`
+
+# Run as a normal user with sudo rights
+check_user() {
+    if [ "$EUID" -eq 0 ]; then
+        printf "${fgred}Please run this as a normal user, without sudo. It asks for sudo when it is needed.${normal}\n"
+        exit 1
+    fi
+    if ! command -v sudo &>/dev/null || ! sudo -v; then
+        printf "${fgred}Your user needs sudo rights.${normal}\n"
+        exit 1
+    fi
+}
+
+menu_line() {
+    printf "${menu} ${number}%3s)${menu} %s ${normal}\n" "$1" "$2"
+}
+
+# Display all reset tasks
 show_reset_menu() {
-    normal=$(echo "\033[m")
-    menu=$(echo "\033[36m") #blue
-    number=$(echo "\033[33m") #yellow
-    fgred=$(echo "\033[31m")
-    printf "\n${menu}********* System Reset Tool ***********${normal}\n"
-    printf "${menu} ${number} 1)${menu} List updates ${normal}\n"
-    printf "${menu} ${number} 2)${menu} Uninstall Tailscale ${normal}\n"
-    printf "${menu} ${number} 3)${menu} Reset UFW firewall settings ${normal}\n"
-    printf "${menu} ${number} 4)${menu} Uninstall Cockpit web manager ${normal}\n"
-    printf "${menu} ${number} 5)${menu} Uninstall Docker and Docker Compose ${normal}\n"
-    printf "${menu} ${number} 6)${menu} Uninstall Samba and domain functionality ${normal}\n"
-    printf "${menu} ${number} 7)${menu} Uninstall other necessary programs ${normal}\n"
-    printf "${menu} ${number} 8)${menu} Remove WAGO login script ${normal}\n"
-    printf "${menu} ${number} 9)${menu} Leave and reset Samba domain ${normal}\n"
-    printf "${menu} ${number} 10)${menu} Uninstall OPC UA Commander ${normal}\n"
-    printf "${menu} ${number} 11)${menu} Uninstall Node.js ${normal}\n"
-    printf "${menu} ${number} 12)${menu} Uninstall Node-RED ${normal}\n"
-    printf "${menu} ${number} 13)${menu} Uninstall unattended-upgrades ${normal}\n"
-    printf "${menu} ${number} 14)${menu} Run all reset tasks sequentially ${normal}\n"
-    printf "${menu} ${number} x)${menu} Exit ${normal}\n"
-    printf "Please enter a menu option and enter or ${fgred}x to exit. ${normal}"
-    read -r opt
+    printf "\n${menu}********* WAGO Edge Reset ***********${normal}\n"
+    printf "${fgred}Everything here removes programs. You are asked to confirm first.${normal}\n\n"
+    menu_line 1 "Remove common tools"
+    menu_line 2 "Remove WAGO login script"
+    menu_line 3 "Remove automatic security updates"
+    menu_line 4 "Remove firewall (UFW)"
+    menu_line 5 "Remove Cockpit"
+    menu_line 6 "Remove Tailscale"
+    menu_line 7 "Remove Fail2ban"
+    menu_line 8 "Remove file server (Samba). Shared files are kept"
+    menu_line 9 "Leave the Windows domain"
+    menu_line 10 "Remove Docker and Docker Compose"
+    menu_line 11 "Remove LazyDocker"
+    menu_line 12 "Remove Portainer"
+    menu_line 13 "Remove Node-RED"
+    menu_line 14 "Remove Node.js"
+    menu_line 15 "Remove Java"
+    menu_line 16 "Remove OPC UA Commander"
+    menu_line 17 "Remove opcilloscope"
+    menu_line 18 "Remove Mosquitto"
+    menu_line 19 "Remove EKBPRO KNX Terminal"
+    menu_line 20 "Remove InfluxDB"
+    menu_line 21 "Remove Grafana"
+    menu_line 22 "Remove Ignition"
+    menu_line 23 "Remove Bitwarden CLI"
+    menu_line 24 "Remove everything above"
+    echo
+    menu_line x "Exit"
+    printf "Please enter a menu option: "
+    read -r opt || exit 0
 }
 
-option_picked() {
-    msgcolor=$(echo "\033[01;31m") # bold red
-    normal=$(echo "\033[00;00m") # normal white
-    message=${1:-"${normal}Error: No message passed"}
-    printf "${msgcolor}${message}${normal}\n"
+# Ask before removing something, only a typed yes continues
+confirm() {
+    printf "${fgred}%s${normal} Type yes to continue: " "$1"
+    read -r answer
+    [ "$answer" = "yes" ]
 }
 
-# List system updates
-list_system_updates() {
-    echo "Checking installed updates."
-    apt list --upgradable
+# Remove a container and its volumes if they exist: remove_container name volume...
+remove_container() {
+    local name="$1" volume
+    shift
+    command -v docker &>/dev/null || return 0
+    if sudo docker ps -a --format '{{.Names}}' | grep -qx "$name"; then
+        sudo docker rm -f "$name"
+        for volume in "$@"; do
+            sudo docker volume rm "$volume"
+        done
+    fi
 }
 
-# Uninstall Tailscale
-uninstall_tailscale() {
-    echo "Uninstalling Tailscale..."
-    apt-get remove --purge -y tailscale
-    apt-get autoremove -y
-    rm -rf /var/lib/tailscale
+# Programs installed with nvm are only found after this
+load_nvm() {
+    if [ -s "$HOME/.nvm/nvm.sh" ]; then
+        . "$HOME/.nvm/nvm.sh"
+    fi
 }
 
-# Reset UFW firewall settings
-reset_ufw() {
-    echo "Resetting UFW settings..."
-    ufw disable
-    ufw reset
-    apt-get remove --purge -y ufw
-    apt-get autoremove -y
+purge() {
+    sudo apt-get remove --purge -y "$@"
+    sudo apt-get autoremove -y
 }
 
-# Uninstall Cockpit
-uninstall_cockpit() {
-    echo "Uninstalling Cockpit..."
-    apt-get remove --purge -y cockpit cockpit-bridge cockpit-networkmanager cockpit-packagekit cockpit-pcp cockpit-storaged cockpit-system cockpit-ws
-    systemctl stop cockpit
-    systemctl disable cockpit.socket
-    apt-get autoremove -y
-}
-
-# Uninstall Docker and Docker Compose
-uninstall_docker() {
-    echo "Uninstalling Docker and Docker Compose..."
-    apt-get remove --purge -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-    apt-get autoremove -y
-    rm -rf /var/lib/docker
-    rm -rf /etc/docker
-    rm -rf /var/run/docker.sock
-}
-
-# Uninstall other necessary programs
+# Remove common tools. sudo, curl, gnupg and rsyslog stay.
 uninstall_other_programs() {
-    echo "Uninstalling other programs..."
-    apt-get remove --purge -y sudo appstream bmon curl dnsutils exfat-fuse exfat-utils gnupg gpg-agent gpgconf lm-sensors mc net-tools nfs-common ntfs-3g rsync rsyslog vim
-    apt-get autoremove -y
+    confirm "This removes htop, tmux, vim, mc and the other common tools." || return 0
+    purge appstream bmon dnsutils exfat-fuse htop iperf3 lm-sensors mbpoll mc ncdu net-tools nfs-common ntfs-3g tmux vim
 }
 
-# Remove WAGO login script
 remove_wago_login() {
-    echo "Removing WAGO_LOGIN file..."
-    rm -f /etc/WAGO_LOGIN
-    sed -i '/\/etc\/WAGO_LOGIN/d' /etc/profile
+    confirm "This removes the WAGO login script." || return 0
+    sudo rm -f /etc/WAGO_LOGIN
+    sudo sed -i '/\/etc\/WAGO_LOGIN/d' /etc/profile
 }
 
-# Uninstall Samba and domain functionality
-uninstall_samba_domain() {
-    echo "Uninstalling Samba and domain functionality..."
-    apt-get remove --purge -y realmd sssd sssd-tools libnss-sss libpam-sss adcli samba-common-bin oddjob oddjob-mkhomedir packagekit
-    apt-get autoremove -y
-}
-
-# Leave and reset Samba domain
-reset_samba_domain() {
-    echo "Leaving Samba domain..."
-    realm leave yourdomain.com
-    echo "Resetting Samba configuration..."
-    sed -i '/workgroup = YOURDOMAIN/d' /etc/samba/smb.conf
-    sed -i '/security = ads/d' /etc/samba/smb.conf
-    sed -i '/realm = YOURDOMAIN.COM/d' /etc/samba/smb.conf
-    systemctl stop smbd nmbd
-    systemctl disable smbd nmbd
-    apt-get remove --purge -y samba
-    apt-get autoremove -y
-}
-
-# Uninstall OPC UA Commander
-uninstall_opcua_commander() {
-    echo "Uninstalling OPC UA Commander..."
-    snap remove opcua-commander || npm uninstall -g opcua-commander || docker rmi commander
-}
-
-# Uninstall Node.js
-uninstall_nodejs() {
-    echo "Uninstalling Node.js..."
-    apt-get remove --purge -y nodejs
-    apt-get autoremove -y
-    rm -rf /usr/local/nvm
-    rm -rf ~/.nvm
-    sed -i '/NVM_DIR/d' ~/.bashrc ~/.zshrc
-}
-
-# Uninstall Node-RED
-uninstall_nodered() {
-    echo "Uninstalling Node-RED..."
-    npm uninstall -g --unsafe-perm node-red
-    rm -rf /usr/lib/node_modules/node-red
-}
-
-# Uninstall unattended-upgrades
 uninstall_unattended_upgrades() {
-    echo "Uninstalling unattended-upgrades..."
-    apt-get remove --purge -y unattended-upgrades
-    apt-get autoremove -y
+    confirm "The machine no longer installs security updates by itself." || return 0
+    purge unattended-upgrades
 }
 
-# Run all reset tasks sequentially
+reset_ufw() {
+    confirm "This removes the firewall, and all ports are open afterwards." || return 0
+    sudo ufw --force disable
+    sudo ufw --force reset
+    purge ufw
+}
+
+uninstall_cockpit() {
+    confirm "This removes Cockpit." || return 0
+    sudo systemctl disable --now cockpit.socket
+    purge cockpit cockpit-bridge cockpit-networkmanager cockpit-packagekit cockpit-pcp cockpit-storaged cockpit-system cockpit-ws
+    if [ -f /etc/network/interfaces.bak ]; then
+        echo "If NetworkManager took over the network, your old settings are in /etc/network/interfaces.bak"
+    fi
+}
+
+uninstall_tailscale() {
+    confirm "If you are connected through Tailscale, you lose the connection." || return 0
+    purge tailscale
+    sudo rm -rf /var/lib/tailscale
+}
+
+uninstall_fail2ban() {
+    confirm "This removes Fail2ban." || return 0
+    sudo systemctl disable --now fail2ban
+    purge fail2ban
+    sudo rm -f /etc/fail2ban/jail.d/sshd-systemd.conf
+}
+
+# The shared folders are not deleted, they can hold the only copy of the files
+uninstall_file_server() {
+    confirm "Other machines can no longer reach the shared folders. The files stay on this machine." || return 0
+    sudo systemctl disable --now smbd nmbd
+    purge samba
+}
+
+# Leave the Windows domain the machine is joined to
+leave_domain() {
+    local domain
+    domain="$(realm list --name-only 2>/dev/null | head -n 1)"
+    if [ -n "$domain" ]; then
+        confirm "Domain users can no longer log in to this machine after leaving $domain." || return 0
+        sudo realm leave "$domain"
+    else
+        echo "The machine is not in a domain."
+        confirm "This removes the domain packages." || return 0
+    fi
+    purge realmd sssd sssd-tools libnss-sss libpam-sss adcli samba-common-bin oddjob oddjob-mkhomedir packagekit
+}
+
+uninstall_docker() {
+    confirm "This removes Docker." || return 0
+    purge docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    sudo rm -f /etc/apt/sources.list.d/docker.list /usr/share/keyrings/docker-archive-keyring.gpg
+    if confirm "Also delete ALL containers, images and data in /var/lib/docker? This cannot be undone."; then
+        sudo rm -rf /var/lib/docker /etc/docker
+    fi
+}
+
+uninstall_lazydocker() {
+    confirm "This removes LazyDocker." || return 0
+    rm -f "$HOME/.local/bin/lazydocker"
+    if command -v docker &>/dev/null; then
+        sudo docker rmi lazyteam/lazydocker
+    fi
+    sed -i '/^alias lzd=/d' ~/.bashrc
+}
+
+uninstall_portainer() {
+    confirm "This removes Portainer and its settings. Your other containers keep running." || return 0
+    remove_container portainer portainer_data
+}
+
+uninstall_nodered() {
+    confirm "This removes Node-RED. Your flows stay in ~/.node-red." || return 0
+    sudo systemctl disable --now nodered.service
+    sudo npm uninstall -g --unsafe-perm node-red
+    sudo rm -f /lib/systemd/system/nodered.service
+    sudo systemctl daemon-reload
+}
+
+uninstall_nodejs() {
+    confirm "This removes Node.js. Node-RED, OPC UA Commander and the Bitwarden CLI from NPM stop working." || return 0
+    purge nodejs npm
+    sudo rm -f /etc/apt/sources.list.d/nodesource.list /usr/share/keyrings/nodesource.gpg
+    rm -rf "$HOME/.nvm"
+    sed -i '/NVM_DIR/d' ~/.bashrc
+}
+
+uninstall_java() {
+    confirm "This removes Java." || return 0
+    purge default-jre default-jdk
+}
+
+uninstall_opcua_commander() {
+    confirm "This removes OPC UA Commander." || return 0
+    if command -v snap &>/dev/null; then
+        sudo snap remove opcua-commander
+    fi
+    if command -v docker &>/dev/null; then
+        sudo docker rmi commander
+    fi
+    if command -v npm &>/dev/null; then
+        if [[ "$(command -v npm)" == "$HOME"/* ]]; then
+            npm uninstall -g opcua-commander
+        else
+            sudo npm uninstall -g opcua-commander
+        fi
+    fi
+    sed -i '/^alias opcua-commander=/d' ~/.bashrc
+}
+
+uninstall_opcilloscope() {
+    confirm "This removes opcilloscope." || return 0
+    rm -f "$HOME/.local/bin/opcilloscope"
+}
+
+uninstall_mosquitto() {
+    confirm "This removes the MQTT broker." || return 0
+    purge mosquitto mosquitto-clients
+}
+
+# Remove the KNX server and program. The folder can hold customer files, so it is shown first.
+uninstall_knx_terminal() {
+    local folder="$HOME/ekbpro-knx-terminal-python"
+    printf "${menu}Install directory ${number}[%s]${menu}: ${normal}" "$folder"
+    read -r answer
+    folder="${answer:-$folder}"
+    confirm "This stops the KNX server and deletes $folder with the KNX project, plan.yaml and all logged data." || return 0
+    sudo systemctl disable --now knxscada
+    sudo rm -f /etc/systemd/system/knxscada.service
+    sudo systemctl daemon-reload
+    if [ -f "$folder/scada" ]; then
+        rm -rf "$folder"
+    else
+        echo "$folder does not look like the KNX Terminal folder, it was not deleted."
+    fi
+}
+
+uninstall_influxdb() {
+    confirm "This removes InfluxDB and ALL stored measurements." || return 0
+    remove_container influxdb influxdb2_data influxdb2_config influxdb3_data
+    sudo systemctl disable --now influxdb
+    purge influxdb2
+    sudo rm -rf /var/lib/influxdb /etc/influxdb
+    sudo rm -f /etc/apt/sources.list.d/influxdata.list /usr/share/keyrings/influxdata-archive.gpg
+}
+
+uninstall_grafana() {
+    confirm "This removes Grafana and ALL dashboards." || return 0
+    remove_container grafana grafana_data
+    sudo systemctl disable --now grafana-server
+    purge grafana
+    sudo rm -f /etc/apt/sources.list.d/grafana.list /usr/share/keyrings/grafana.gpg
+}
+
+# The installer version is removed with its own uninstaller
+uninstall_ignition() {
+    confirm "This removes Ignition in Docker with ALL projects and settings." || return 0
+    remove_container ignition ignition_data
+    if [ -d /usr/local/bin/ignition ]; then
+        echo "Ignition is also installed with the installer. Remove it with the uninstaller in /usr/local/bin/ignition"
+    fi
+}
+
+# The login and the local copy of the vault go too. The account itself is not touched.
+uninstall_bitwarden_cli() {
+    confirm "This removes the Bitwarden CLI and its login on this machine. Your Bitwarden account is not touched." || return 0
+    sudo rm -f /usr/local/bin/bw
+    if command -v snap &>/dev/null; then
+        sudo snap remove bw
+    fi
+    if command -v npm &>/dev/null; then
+        if [[ "$(command -v npm)" == "$HOME"/* ]]; then
+            npm uninstall -g @bitwarden/cli
+        else
+            sudo npm uninstall -g @bitwarden/cli
+        fi
+    fi
+    rm -rf "$HOME/.config/Bitwarden CLI" "$HOME/snap/bw"
+}
+
+# Run all reset tasks. Each task still asks for confirmation.
 run_all_reset_tasks() {
-    list_system_updates
+    confirm "You are asked about each program in turn." || return 0
+    uninstall_bitwarden_cli
+    uninstall_ignition
+    uninstall_grafana
+    uninstall_influxdb
+    uninstall_knx_terminal
+    uninstall_mosquitto
+    uninstall_opcilloscope
+    uninstall_opcua_commander
+    uninstall_nodered
+    uninstall_nodejs
+    uninstall_java
+    uninstall_portainer
+    uninstall_lazydocker
+    uninstall_docker
+    uninstall_cockpit
+    uninstall_fail2ban
+    uninstall_file_server
+    leave_domain
+    remove_wago_login
+    uninstall_other_programs
+    uninstall_unattended_upgrades
     uninstall_tailscale
     reset_ufw
-    uninstall_cockpit
-    uninstall_docker
-    uninstall_samba_domain
-    uninstall_other_programs
-    remove_wago_login
-    reset_samba_domain
-    uninstall_opcua_commander
-    uninstall_nodejs
-    uninstall_nodered
-    uninstall_unattended_upgrades
 }
 
 # Display menu and handle user choice
+check_user
+load_nvm
 clear
-show_reset_menu
-while [ "$opt" != '' ]
-do
-    if [ "$opt" = '' ]; then
-        exit
-    else
-        case $opt in
-            1) clear;
-                option_picked "Option 1 Picked - List updates";
-                list_system_updates;
-                show_reset_menu;
-            ;;
-            2) clear;
-                option_picked "Option 2 Picked - Uninstall Tailscale";
-                uninstall_tailscale;
-                show_reset_menu;
-            ;;
-            3) clear;
-                option_picked "Option 3 Picked - Reset UFW firewall settings";
-                reset_ufw;
-                show_reset_menu;
-            ;;
-            4) clear;
-                option_picked "Option 4 Picked - Uninstall Cockpit web manager";
-                uninstall_cockpit;
-                show_reset_menu;
-            ;;
-            5) clear;
-                option_picked "Option 5 Picked - Uninstall Docker and Docker Compose";
-                uninstall_docker;
-                show_reset_menu;
-            ;;
-            6) clear;
-                option_picked "Option 6 Picked - Uninstall Samba and domain functionality";
-                uninstall_samba_domain;
-                show_reset_menu;
-            ;;
-            7) clear;
-                option_picked "Option 7 Picked - Uninstall other necessary programs";
-                uninstall_other_programs;
-                show_reset_menu;
-            ;;
-            8) clear;
-                option_picked "Option 8 Picked - Remove WAGO login script";
-                remove_wago_login;
-                show_reset_menu;
-            ;;
-            9) clear;
-                option_picked "Option 9 Picked - Leave and reset Samba domain";
-                reset_samba_domain;
-                show_reset_menu;
-            ;;
-            10) clear;
-                option_picked "Option 10 Picked - Uninstall OPC UA Commander";
-                uninstall_opcua_commander;
-                show_reset_menu;
-            ;;
-            11) clear;
-                option_picked "Option 11 Picked - Uninstall Node.js";
-                uninstall_nodejs;
-                show_reset_menu;
-            ;;
-            12) clear;
-                option_picked "Option 12 Picked - Uninstall Node-RED";
-                uninstall_nodered;
-                show_reset_menu;
-            ;;
-            13) clear;
-                option_picked "Option 13 Picked - Uninstall unattended-upgrades";
-                uninstall_unattended_upgrades;
-                show_reset_menu;
-            ;;
-            14) clear;
-                option_picked "Option 14 Picked - Run all reset tasks sequentially";
-                run_all_reset_tasks;
-                show_reset_menu;
-            ;;
-            x) clear;
-                printf "Exiting...\n";
-                exit;
-            ;;
-            *) clear;
-                option_picked "Pick an option from the menu";
-                show_reset_menu;
-            ;;
-        esac
-    fi
+while true; do
+    show_reset_menu
+    case $opt in
+        1) uninstall_other_programs ;;
+        2) remove_wago_login ;;
+        3) uninstall_unattended_upgrades ;;
+        4) reset_ufw ;;
+        5) uninstall_cockpit ;;
+        6) uninstall_tailscale ;;
+        7) uninstall_fail2ban ;;
+        8) uninstall_file_server ;;
+        9) leave_domain ;;
+        10) uninstall_docker ;;
+        11) uninstall_lazydocker ;;
+        12) uninstall_portainer ;;
+        13) uninstall_nodered ;;
+        14) uninstall_nodejs ;;
+        15) uninstall_java ;;
+        16) uninstall_opcua_commander ;;
+        17) uninstall_opcilloscope ;;
+        18) uninstall_mosquitto ;;
+        19) uninstall_knx_terminal ;;
+        20) uninstall_influxdb ;;
+        21) uninstall_grafana ;;
+        22) uninstall_ignition ;;
+        23) uninstall_bitwarden_cli ;;
+        24) run_all_reset_tasks ;;
+        x|X) printf "Exiting...\n"; exit 0 ;;
+        *) clear; continue ;;
+    esac
+    printf "\nPress enter to go back to the menu: "
+    read -r
+    clear
 done

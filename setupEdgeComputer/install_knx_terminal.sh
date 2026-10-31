@@ -2,7 +2,7 @@
 
 # Install and set up EKBPRO KNX Terminal Python
 # https://github.com/espenbo/ekbpro-knx-terminal-python
-# Can be run on its own or from option 18 in setup_edge_computer.sh.
+# Can be run on its own or from option 21 in setup_edge_computer.sh.
 
 REPO_URL="https://github.com/espenbo/ekbpro-knx-terminal-python.git"
 DOCS_URL="https://github.com/espenbo/ekbpro-knx-terminal-python/tree/main/docs"
@@ -211,7 +211,7 @@ choose_connection() {
       done
       ;;
     routing|routing_secure)
-      if command -v ufw &>/dev/null && sudo ufw status | grep -q "Status: active"; then
+      if sudo ufw status 2>/dev/null | grep -q "Status: active"; then
         printf "${fgred}UFW is active. Routing uses multicast 224.0.23.12 on UDP port 3671, which UFW may block.${normal}\n"
       fi
       ;;

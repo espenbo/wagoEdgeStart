@@ -81,8 +81,8 @@ hr_data[3528:3530] = int32_to_regs(17000000)            # 3528: Total yield cons
 # -------------------------
 device_contexts = {
     unit: ModbusDeviceContext(
-        hr=ModbusSequentialDataBlock(0, hr_data.copy()), # holding registers
-        ir=ModbusSequentialDataBlock(0, hr_data.copy())  # mirror holding -> input
+        hr=ModbusSequentialDataBlock(1, hr_data.copy()), # holding registers
+        ir=ModbusSequentialDataBlock(1, hr_data.copy())  # mirror holding -> input
     )
     for unit in range(1, NUM_SLAVES + 1)
 }
@@ -121,8 +121,8 @@ def update_registers():
 
         # Update all slaves' holding and input registers
         for unit in range(1, NUM_SLAVES + 1):
-            context[unit].setValues(3, 0, hr_data)  # Holding registers
-            context[unit].setValues(4, 0, hr_data)  # Input registers
+            device_contexts[unit].setValues(3, 0, hr_data)  # Holding registers
+            device_contexts[unit].setValues(4, 0, hr_data)  # Input registers
 
         tick += 1
         time.sleep(2)

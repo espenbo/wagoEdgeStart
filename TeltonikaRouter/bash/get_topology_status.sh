@@ -4,9 +4,9 @@ set -euo pipefail
 # get_topology_status.sh — Teltonika RUTX Topology (devices_scan + status per docs schema)
 # Req: curl, jq
 # Examples:
-#   ./get_topology_status3.sh --router 192.168.1.1 --user admin --pass 'secret'
-#   ./get_topology_status3.sh --router 192.168.1.1 --user admin --pass 'secret' --scan --iface lan
-#   ./get_topology_status3.sh -r 192.168.1.1 -u admin -p secret --scan --iface both --json
+#   ./get_topology_status.sh --router 192.168.1.1 --user admin --pass 'secret'
+#   ./get_topology_status.sh --router 192.168.1.1 --user admin --pass 'secret' --scan --iface lan
+#   ./get_topology_status.sh -r 192.168.1.1 -u admin -p secret --scan --iface both --json
 
 ROUTER_IP="192.168.1.1"
 USERNAME="admin"
@@ -32,7 +32,7 @@ while (( "$#" )); do
     -h|--help)
       cat <<'EOF'
 Usage:
-  get_topology_status3.sh --router <ip> --user <u> --pass <p> [--scan] [--iface lan|wan|both] [--json]
+  get_topology_status.sh --router <ip> --user <u> --pass <p> [--scan] [--iface lan|wan|both] [--json]
 
 Notes:
   - --scan posts to /api/topology/actions/devices_scan with {"data":{"scan_type":"lan|wan|all"}}
@@ -56,7 +56,7 @@ esac
 
 # 1) Login
 log "1/3 Logging in to https://$ROUTER_IP/api/login ..."
-LOGIN=$(curl -sk -X POST "https://$ROUTER_IP/api/login" \
+LOGIN=$(curl -sk --max-time "$TIMEOUT" -X POST "https://$ROUTER_IP/api/login" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}" -w "\n%{http_code}")
 HTTP=$(echo "$LOGIN" | tail -n1); BODY=$(echo "$LOGIN" | head -n -1)
@@ -69,7 +69,7 @@ SCAN_DEVICES_JSON=''
 if $DO_SCAN; then
   log "2/3 Running devices_scan (scan_type: $SCAN_TYPE) ..."
   SCAN_REQ="{\"data\":{\"scan_type\":\"$SCAN_TYPE\"}}"
-  SCAN_RESP=$(curl -sk -X POST "https://$ROUTER_IP/api/topology/actions/devices_scan" \
+  SCAN_RESP=$(curl -sk --max-time "$TIMEOUT" -X POST "https://$ROUTER_IP/api/topology/actions/devices_scan" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "$SCAN_REQ" -w "\n%{http_code}")
@@ -89,7 +89,7 @@ fi
 
 # 3) Get topology status (interfaces[])
 log "3/3 Fetching topology status ..."
-STATUS=$(curl -sk -X GET "https://$ROUTER_IP/api/topology/status" \
+STATUS=$(curl -sk --max-time "$TIMEOUT" -X GET "https://$ROUTER_IP/api/topology/status" \
   -H "Authorization: Bearer $TOKEN" -w "\n%{http_code}")
 THTTP=$(echo "$STATUS" | tail -n1)
 TBODY=$(echo "$STATUS" | head -n -1)
