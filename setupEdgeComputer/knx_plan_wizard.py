@@ -4,8 +4,8 @@ Started by install_knx_terminal.sh with the program's venv:
     PYTHONPATH=<install dir> KNXSCADA_CONFIG=<config.yaml> venv/bin/python knx_plan_wizard.py <image folder>
 
 Each floor is made from a drawing or by typing the rooms row by row. A drawing is read like this:
-the walls are the long dark lines, door openings are closed by making the walls thicker, and every
-area that is then closed in is a room. plan.yaml only holds rectangles, so an L-shaped room becomes
+the walls are the long lines, the drawing is straightened, door openings are closed by drawing a line
+between walls on the same line, and every area that is then closed in is a room. plan.yaml only holds rectangles, so an L-shaped room becomes
 its bounding box. The result is shown in the terminal and can be corrected before it is saved.
 """
 
@@ -20,9 +20,12 @@ from knxscada.config import load_config
 from knxscada.plan import load_plan, plan_path
 from knxscada.project import load_project
 
-MAX_IMAGE_SIZE = 800  # longest side in pixels, enough for rooms and keeps it fast
-DEFAULT_DOOR_GAP_M = 1.0
-MIN_ROOM_AREA_M2 = 0.8
+MAX_IMAGE_SIZE = 1000  # longest side in pixels, enough for rooms and keeps it fast
+LINE_CONTRAST = 120  # weaker lines than this are door swings and other details, not walls
+MAX_ROTATION = 20  # degrees
+DEFAULT_DOOR_GAP_M = 2.5  # largest opening in a wall that is closed
+MIN_WALL_M = 0.4  # shorter pieces are walls seen from the side
+MIN_ROOM_AREA_M2 = 1.0
 MIN_WALL_SHARE = 0.15  # a dark shape shorter than this share of the building is text or furniture
 WALL_GAP_MM = 150  # wall thickness in rooms typed by hand
 ROW_ITEM = re.compile(r"\s*(.+?)\s+(\d+(?:[.,]\d+)?)\s*(?:,|$)")  # "Kitchen 3,3, Bath 2": the comma is both
@@ -80,15 +83,47 @@ def components(cells, width, height):
     return found
 
 
+def find_rotation(lines):
+    """Angle that makes the walls line up with the image, the one giving the sharpest line profile."""
+    from PIL import Image
+
+    small = lines.copy()
+    small.thumbnail((400, 400))
+
+    def sharpness(angle):
+        turned = small.rotate(angle, resample=Image.BILINEAR, expand=True)
+        rows = turned.resize((1, turned.height), Image.BOX).tobytes()
+        columns = turned.resize((turned.width, 1), Image.BOX).tobytes()
+        return sum(v * v for v in rows) + sum(v * v for v in columns)
+
+    coarse = max(range(-MAX_ROTATION, MAX_ROTATION + 1), key=sharpness)
+    fine = [coarse + step / 4 for step in range(-4, 5)]
+    return max(fine, key=sharpness)
+
+
 def load_walls(path):
     """Read a drawing. Returns the wall mask cropped to the building, and its size in pixels."""
-    from PIL import Image, ImageFilter, ImageOps
+    from PIL import Image, ImageFilter
 
     image = Image.open(path).convert("RGBA")
     background = Image.new("RGBA", image.size, "white")
-    gray = ImageOps.autocontrast(Image.alpha_composite(background, image).convert("L"))
-    gray.thumbnail((MAX_IMAGE_SIZE, MAX_IMAGE_SIZE))
-    dark = gray.point(lambda v: 255 if v < 140 else 0).filter(ImageFilter.MaxFilter(3))
+    gray = Image.alpha_composite(background, image).convert("L")
+
+    # Lines are what differs from the paper, which can be white or dark as in a CAD screen.
+    # This is done before scaling down, where thin lines would fade away.
+    histogram = gray.histogram()
+    paper = histogram.index(max(histogram))
+    lines = gray.point(lambda v: abs(v - paper)).filter(ImageFilter.MaxFilter(3))
+    lines = lines.point(lambda v: 255 if v >= LINE_CONTRAST else 0)
+    factor = max(1, -(-max(lines.size) // MAX_IMAGE_SIZE))
+    lines = lines.reduce(factor).point(lambda v: 255 if v >= 32 else 0)
+
+    angle = find_rotation(lines)
+    if angle:
+        print(f"The building is turned {angle} degrees in the drawing, straightening it.")
+        lines = lines.rotate(angle, resample=Image.BILINEAR, expand=True).point(lambda v: 255 if v >= 32 else 0)
+
+    dark = lines.filter(ImageFilter.MaxFilter(3))
     width, height = dark.size
 
     shapes = components(bytearray(dark.tobytes()), width, height)
@@ -109,17 +144,48 @@ def load_walls(path):
     return mask.crop((min_x, min_y, max_x + 1, max_y + 1))
 
 
+def bridge_openings(mask, max_gap, min_wall):
+    """Draw a line across each opening in a row, between two pieces of wall on the same line.
+
+    A row through a narrow room only crosses the walls sideways, and those short pieces are
+    not bridged. That is why narrow rooms survive here, also when the openings are wide.
+    """
+    from PIL import Image
+
+    width, height = mask.size
+    cells = bytearray(mask.tobytes())
+    bridged = bytearray(cells)
+    for y in range(height):
+        row = cells[y * width:(y + 1) * width]
+        wall_end = None
+        x = 0
+        while x < width:
+            if not row[x]:
+                x += 1
+                continue
+            start = x
+            while x < width and row[x]:
+                x += 1
+            if x - start < min_wall:
+                continue
+            if wall_end is not None and start - wall_end <= max_gap:
+                bridged[y * width + wall_end:y * width + start] = b"\xff" * (start - wall_end)
+            wall_end = x
+    return Image.frombytes("L", (width, height), bytes(bridged))
+
+
 def find_rooms(mask, building_width_m, door_gap_m):
     """Rooms in a drawing as dicts in mm, and the outer size of the building in mm."""
-    from PIL import ImageFilter
+    from PIL import Image, ImageChops, ImageFilter
 
     width, height = mask.size
     mm_per_pixel = building_width_m * 1000 / width
-    grow = max(1, round(door_gap_m * 500 / mm_per_pixel))
+    max_gap = round(door_gap_m * 1000 / mm_per_pixel)
+    min_wall = round(MIN_WALL_M * 1000 / mm_per_pixel)
 
-    closed = mask
-    for _ in range(grow):
-        closed = closed.filter(ImageFilter.MaxFilter(3))
+    across = bridge_openings(mask, max_gap, min_wall)
+    down = bridge_openings(mask.transpose(Image.TRANSPOSE), max_gap, min_wall)
+    closed = ImageChops.lighter(across, down.transpose(Image.TRANSPOSE)).filter(ImageFilter.MaxFilter(3))
     free = bytearray(0 if v else 1 for v in closed.tobytes())
 
     rooms = []
@@ -128,17 +194,12 @@ def find_rooms(mask, building_width_m, door_gap_m):
             continue  # outside the building
         if area * (mm_per_pixel / 1000) ** 2 < MIN_ROOM_AREA_M2:
             continue
-        # Give back what the thicker walls took from the room
-        left = max(min_x - grow, 0)
-        top = max(min_y - grow, 0)
-        right = min(max_x + grow + 1, width)
-        bottom = min(max_y + grow + 1, height)
         rooms.append({
             "label": "",
-            "x": round(left * mm_per_pixel, -1),
-            "y": round(top * mm_per_pixel, -1),
-            "w": round((right - left) * mm_per_pixel, -1),
-            "h": round((bottom - top) * mm_per_pixel, -1),
+            "x": round(min_x * mm_per_pixel, -1),
+            "y": round(min_y * mm_per_pixel, -1),
+            "w": round((max_x - min_x + 1) * mm_per_pixel, -1),
+            "h": round((max_y - min_y + 1) * mm_per_pixel, -1),
         })
     rooms.sort(key=lambda r: (r["y"], r["x"]))
     return rooms, building_width_m * 1000, round(height * mm_per_pixel, -1)
@@ -191,12 +252,12 @@ def review_rooms(mask, building_width_m):
     rooms, floor_width, floor_depth = find_rooms(mask, building_width_m, door_gap)
     while True:
         show_rooms(rooms, floor_width, floor_depth)
-        print(f"\nFound {len(rooms)} rooms. Door opening set to {door_gap} m.")
+        print(f"\nFound {len(rooms)} rooms. Openings up to {door_gap} m are closed.")
         print("  enter    = accept")
         print("  d 3      = delete room 3")
         print("  m 3 4    = merge room 3 and 4 (a room split by furniture or a wall opening)")
-        print("  g 1.4    = larger door opening, when two rooms have become one")
-        print("  g 0.7    = smaller door opening, when a narrow room is missing")
+        print("  g 3.5    = close larger openings, when two rooms have become one")
+        print("  g 1.5    = close smaller openings, when a room is split by mistake")
         print("  a 8.9 3 1.1 4 = add a missing room: left, top, width and depth in metres")
         print("  h        = type the rooms by hand instead")
         parts = input("> ").strip().lower().replace(",", ".").split()
@@ -337,6 +398,7 @@ def main():
         rooms, width, depth = result
         ets_rooms = [r["name"] for f in ets_floors for r in f["rooms"] if f["name"] == name]
         ets_rooms = ets_rooms or [r["name"] for f in ets_floors for r in f["rooms"]]
+        ets_rooms = list(dict.fromkeys(ets_rooms))  # a room can be listed under several main groups
         link_rooms(rooms, ets_rooms)
         floors.append({"name": name, "width": width, "depth": depth, "rooms": rooms})
 

@@ -54,7 +54,7 @@ This script installs [EKBPRO KNX Terminal Python](https://github.com/espenbo/ekb
 
 The script installs the program, asks for the KNX project from ETS (upload from your PC, a path on the machine or a URL), asks how the machine is connected to KNX, sets up the floor plan, and starts the server as a systemd service.
 
-The floor plan is made by `knx_plan_wizard.py`, one floor at a time. It reads the rooms from a PNG or JPG drawing, or you type them row by row. A drawing needs clean, dark walls on a light background, and you enter the outer width of the building in metres. Rooms are rectangles, so an L-shaped room becomes its bounding box. The result is shown in the terminal, where rooms can be deleted or merged and linked to rooms in ETS.
+The floor plan is made by `knx_plan_wizard.py`, one floor at a time. It reads the rooms from a PNG or JPG drawing, or you type them row by row. A drawing needs clean lines, on a light or dark background, and it may be turned up to 20 degrees. You enter the outer width of the building in metres. Rooms are rectangles, so an L-shaped room becomes its bounding box. On a real CAD drawing with open passages expect to correct the rooms by hand: rooms that are open to each other can be merged or split wrongly. The result is shown in the terminal, where rooms can be deleted or merged and linked to rooms in ETS.
 
 ### reset_setupedge.sh
 
