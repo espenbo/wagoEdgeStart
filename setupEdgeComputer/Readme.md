@@ -26,6 +26,7 @@ This script is used to set up the edge computer by installing and configuring ne
 - Install Node.js
 - Install other necessary programs
 - Install unattended-upgrades
+- Install EKBPRO KNX Terminal and set up a KNX project (`install_knx_terminal.sh`)
 - Run all tasks sequentially
 
 #### Usage
@@ -42,6 +43,18 @@ This script is used to set up the edge computer by installing and configuring ne
 
 
 3. Follow the on-screen menu to select and execute the desired tasks.
+
+### install_knx_terminal.sh
+
+This script installs [EKBPRO KNX Terminal Python](https://github.com/espenbo/ekbpro-knx-terminal-python). It is started from option 18 in `setup_edge_computer.sh`, or on its own as a normal user with sudo rights:
+
+```sh
+./install_knx_terminal.sh
+```
+
+The script installs the program, asks for the KNX project from ETS (upload from your PC, a path on the machine or a URL), asks how the machine is connected to KNX, sets up the floor plan, and starts the server as a systemd service.
+
+The floor plan is made by `knx_plan_wizard.py`, one floor at a time. It reads the rooms from a PNG or JPG drawing, or you type them row by row. A drawing needs clean, dark walls on a light background, and you enter the outer width of the building in metres. Rooms are rectangles, so an L-shaped room becomes its bounding box. The result is shown in the terminal, where rooms can be deleted or merged and linked to rooms in ETS.
 
 ### reset_setupedge.sh
 

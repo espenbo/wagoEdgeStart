@@ -41,7 +41,8 @@ show_menu(){
     printf "${menu} ${number} 15)${menu} Setup Samba and join domain ${normal}\n"
     printf "${menu} ${number} 16)${menu} Run all tasks sequentially ${normal}\n"
     printf "${menu} ${number} 17)${menu} Install unattended-upgrades ${normal}\n"
-    printf "${menu} ${number} 18)${menu} show menu ${normal}\n"
+    printf "${menu} ${number} 18)${menu} Install EKBPRO KNX Terminal and set up KNX project ${normal}\n"
+    printf "${menu} ${number} 19)${menu} show menu ${normal}\n"
     printf "${menu} ${number} x)${menu} Exit ${normal}\n"
     printf "Please enter a menu option and enter or ${fgred}x to exit. ${normal}"
     read opt
@@ -623,6 +624,29 @@ install_unattended_upgrades() {
 
 
 
+# Install EKBPRO KNX Terminal. The installer asks for the KNX project and sets up the program
+install_knx_terminal() {
+    script_dir="$(cd "$(dirname "$0")" && pwd)"
+    if [ -f "$script_dir/install_knx_terminal.sh" ]; then
+        bash "$script_dir/install_knx_terminal.sh"
+        return
+    fi
+
+    echo "Downloading the KNX installer from GitHub..."
+    if ! command -v curl &>/dev/null; then
+        sudo apt install -y curl
+    fi
+    knx_installer="$(mktemp)"
+    if curl -fsSL -o "$knx_installer" https://raw.githubusercontent.com/espenbo/wagoEdgeStart/main/setupEdgeComputer/install_knx_terminal.sh; then
+        # The installer continues as the normal user when this script runs with sudo
+        chmod 644 "$knx_installer"
+        bash "$knx_installer"
+    else
+        echo "Could not download the KNX installer."
+    fi
+    rm -f "$knx_installer"
+}
+
 # Run all tasks sequentially
 run_all_tasks() {
 update_system
@@ -737,6 +761,11 @@ do
                 show_menu;
             ;;
             18) clear;
+                option_picked "Option 18 Picked - Install EKBPRO KNX Terminal";
+                install_knx_terminal;
+                show_menu;
+            ;;
+            19) clear;
                 show_menu;
             ;;
             x) clear;
